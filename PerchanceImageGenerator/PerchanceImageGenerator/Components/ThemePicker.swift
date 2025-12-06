@@ -9,6 +9,16 @@ struct ThemePicker: View {
     
     @EnvironmentObject var themeManager: ThemeManager
     
+    /// The theme to use for styling this picker - based on selected theme for preview
+    private var previewTheme: ResolvedTheme {
+        if let themeId = selectedThemeId,
+           let theme = themeManager.availableThemes.first(where: { $0.id == themeId }) {
+            return ResolvedTheme(source: theme)
+        }
+        // Fall back to global theme
+        return themeManager.resolved
+    }
+    
     init(
         title: String = "Theme",
         selectedThemeId: String?,
@@ -22,23 +32,25 @@ struct ThemePicker: View {
     }
     
     var body: some View {
+        let theme = previewTheme
+        
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.headline)
-                .foregroundColor(themeManager.resolved.textPrimary)
+                .foregroundColor(theme.textPrimary)
             
             ScrollView {
                 VStack(spacing: 10) {
                     if showInheritOption {
-                        inheritOptionRow
+                        inheritOptionRow(theme: theme)
                     }
                     
-                    ForEach(themeManager.availableThemes) { theme in
+                    ForEach(themeManager.availableThemes) { availableTheme in
                         ThemePreviewCard(
-                            theme: theme,
-                            isSelected: selectedThemeId == theme.id,
+                            theme: availableTheme,
+                            isSelected: selectedThemeId == availableTheme.id,
                             action: {
-                                onSelect(theme.id)
+                                onSelect(availableTheme.id)
                             }
                         )
                     }
@@ -48,18 +60,18 @@ struct ThemePicker: View {
         }
     }
     
-    private var inheritOptionRow: some View {
+    private func inheritOptionRow(theme: ResolvedTheme) -> some View {
         Button(action: { onSelect(nil) }) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Use Global Theme")
                         .font(.headline)
-                        .foregroundColor(themeManager.resolved.textPrimary)
+                        .foregroundColor(theme.textPrimary)
                     
                     if let globalTheme = themeManager.availableThemes.first(where: { $0.id == themeManager.globalThemeId }) {
                         Text("Currently: \(globalTheme.name)")
                             .font(.caption)
-                            .foregroundColor(themeManager.resolved.textSecondary)
+                            .foregroundColor(theme.textSecondary)
                     }
                 }
                 
@@ -67,15 +79,15 @@ struct ThemePicker: View {
                 
                 if selectedThemeId == nil {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(themeManager.resolved.primary)
+                        .foregroundColor(theme.primary)
                 }
             }
             .padding(12)
-            .background(themeManager.resolved.backgroundSecondary)
-            .clipShape(RoundedRectangle(cornerRadius: themeManager.resolved.cornerRadiusMedium))
+            .background(theme.backgroundSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusMedium))
             .overlay(
-                RoundedRectangle(cornerRadius: themeManager.resolved.cornerRadiusMedium)
-                    .stroke(selectedThemeId == nil ? themeManager.resolved.primary : Color.clear, lineWidth: 2)
+                RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                    .stroke(selectedThemeId == nil ? theme.primary : Color.clear, lineWidth: 2)
             )
         }
         .buttonStyle(.plain)

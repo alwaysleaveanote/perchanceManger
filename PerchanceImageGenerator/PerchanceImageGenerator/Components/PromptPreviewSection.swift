@@ -38,14 +38,23 @@ struct PromptPreviewSection: View {
     /// Maximum height for the preview area (defaults to 250)
     var maxHeight: CGFloat = 250
     
+    /// Optional character theme ID for character-specific theming
+    var characterThemeId: String? = nil
+    
     // MARK: - Environment
     
     @EnvironmentObject var themeManager: ThemeManager
     
+    // MARK: - Theme Resolution
+    
+    private var theme: ResolvedTheme {
+        themeManager.resolvedTheme(forCharacterThemeId: characterThemeId)
+    }
+    
     // MARK: - Body
     
     var body: some View {
-        let theme = themeManager.resolved
+        let theme = self.theme
         
         VStack(alignment: .leading, spacing: 8) {
             headerView(theme: theme)

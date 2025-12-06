@@ -53,6 +53,9 @@ struct PromptSectionRow: View {
     /// Parameters: (text, kind, label)
     var onSaveAsPreset: ((String, PromptSectionKind, String) -> Void)?
     
+    /// Optional character theme ID for character-specific theming
+    var characterThemeId: String? = nil
+    
     // MARK: - Environment
     
     @EnvironmentObject var presetStore: PromptPresetStore
@@ -153,7 +156,8 @@ struct PromptSectionRow: View {
             text: $text,
             placeholder: "Optional \(label.lowercased()) details",
             minLines: 0,
-            maxLines: 5
+            maxLines: 5,
+            characterThemeId: characterThemeId
         )
         .onAppear {
             updatePresetNameForCurrentText()

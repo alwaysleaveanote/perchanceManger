@@ -156,7 +156,8 @@ struct CharacterOverviewView: View {
                         placeholder: "Character bio / description",
                         minLines: 2,
                         maxLines: 10,
-                        fontSize: 14
+                        fontSize: 14,
+                        characterThemeId: character.characterThemeId
                     )
                 } else {
                     if character.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -185,7 +186,8 @@ struct CharacterOverviewView: View {
                         placeholder: "Any extra notes about this character",
                         minLines: 1,
                         maxLines: 10,
-                        fontSize: 14
+                        fontSize: 14,
+                        characterThemeId: character.characterThemeId
                     )
                 } else {
                     if character.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

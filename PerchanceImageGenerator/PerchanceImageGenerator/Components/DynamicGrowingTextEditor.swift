@@ -1,233 +1,116 @@
 //
-//  DynamicGrowingTextEditor.swift
+//  ThemedTextEditor.swift
 //  PerchanceImageGenerator
 //
-//  A text editor that dynamically grows based on content, with placeholder support.
+//  A simple, themed text editor with placeholder support.
 //
 
 import SwiftUI
 
-// MARK: - DynamicGrowingTextEditor
+// MARK: - ThemedTextEditor
 
-/// A text editor that dynamically adjusts its height based on content.
+/// A simple text editor that supports theming and placeholders.
 ///
-/// Features:
-/// - **Dynamic Height**: Grows from `minLines` to `maxLines` based on content
-/// - **Placeholder**: Shows placeholder text when empty
-/// - **Theme Support**: Automatically applies the current app theme
-/// - **Line Wrapping**: Properly wraps long lines
+/// ## Features
+/// - Placeholder text when empty
+/// - Automatic theme support (global or character-specific via optional override)
+/// - Configurable min/max height
+/// - Smaller font size for better fit in forms
 ///
-/// ## Height Behavior
-/// - Starts at minimum height based on `minLines`
-/// - Grows as content is added
-/// - Stops growing at maximum height based on `maxLines`
-/// - Becomes scrollable when content exceeds maximum height
+/// ## Important
+/// Keyboard dismiss button should be added at the VIEW level using `.toolbar`,
+/// not in individual text editors. This prevents duplicate toolbar items.
 ///
 /// ## Usage
 /// ```swift
-/// DynamicGrowingTextEditor(
+/// // Basic usage (uses global theme)
+/// ThemedTextEditor(text: $description, placeholder: "Enter description...")
+///
+/// // With character theme override
+/// ThemedTextEditor(
 ///     text: $description,
-///     placeholder: "Enter a description...",
-///     minLines: 2,
-///     maxLines: 8
+///     placeholder: "Enter description...",
+///     characterThemeId: character.characterThemeId
 /// )
 /// ```
-struct DynamicGrowingTextEditor: View {
+struct ThemedTextEditor: View {
     
     // MARK: - Properties
     
-    /// Binding to the text content
     @Binding var text: String
-    
-    /// Placeholder text shown when editor is empty
     let placeholder: String
-    
-    /// Minimum number of visible lines
-    let minLines: Int
-    
-    /// Maximum number of visible lines before scrolling
-    let maxLines: Int
-    
-    /// Font size for the text
-    let fontSize: CGFloat
-    
-    // MARK: - Environment & State
+    var characterThemeId: String? = nil
+    var minHeight: CGFloat = 44
+    var maxHeight: CGFloat = 200
     
     @EnvironmentObject var themeManager: ThemeManager
     
-    /// Measured height of the current content
-    @State private var measuredHeight: CGFloat = 0
+    // MARK: - Theme Resolution
     
-    // MARK: - Computed Properties
+    /// Resolves the theme - uses character theme if provided, otherwise global
+    private var theme: ResolvedTheme {
+        themeManager.resolvedTheme(forCharacterThemeId: characterThemeId)
+    }
     
-    /// Line height based on system font
+    // MARK: - Body
+    
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            // Text Editor - use subheadline for smaller text
+            TextEditor(text: $text)
+                .font(.subheadline)
+                .fontDesign(theme.fontDesign)
+                .foregroundColor(theme.textPrimary)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: minHeight, maxHeight: maxHeight)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+            
+            // Placeholder - matches text editor font
+            if text.isEmpty {
+                Text(placeholder)
+                    .font(.subheadline)
+                    .fontDesign(theme.fontDesign)
+                    .foregroundColor(theme.textSecondary.opacity(0.5))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 14)
+                    .allowsHitTesting(false)
+            }
+        }
+        .background(theme.backgroundTertiary)
+        .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
+        .overlay(
+            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                .stroke(theme.border.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - DynamicGrowingTextEditor (Legacy Compatibility)
+
+/// Legacy wrapper for ThemedTextEditor - maintains backward compatibility
+/// while using the new simplified implementation.
+struct DynamicGrowingTextEditor: View {
+    
+    @Binding var text: String
+    let placeholder: String
+    var minLines: Int = 1
+    var maxLines: Int = 10
+    var fontSize: CGFloat = 14  // Default to smaller font
+    var characterThemeId: String? = nil
+    
+    /// Approximate line height for calculating min/max heights
     private var lineHeight: CGFloat {
         UIFont.systemFont(ofSize: fontSize).lineHeight
     }
     
-    /// Font to use for the text editor
-    private var textFont: Font {
-        .system(size: fontSize)
-    }
-    
-    /// Minimum height based on minLines
-    private var minHeight: CGFloat {
-        CGFloat(max(minLines, 1)) * lineHeight + Constants.verticalPadding
-    }
-    
-    /// Maximum height based on maxLines
-    private var maxHeight: CGFloat {
-        CGFloat(max(maxLines, minLines)) * lineHeight + Constants.verticalPadding
-    }
-    
-    /// Whether the text field is effectively empty
-    private var isEmpty: Bool {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-    
-    // MARK: - Constants
-    
-    private enum Constants {
-        static let verticalPadding: CGFloat = 16
-        static let placeholderPadding: CGFloat = 8
-        static let borderOpacity: CGFloat = 0.5
-    }
-    
-    // MARK: - Initialization
-    
-    /// Creates a new dynamic growing text editor
-    /// - Parameters:
-    ///   - text: Binding to the text content
-    ///   - placeholder: Placeholder text shown when empty
-    ///   - minLines: Minimum visible lines (default: 1)
-    ///   - maxLines: Maximum visible lines before scrolling (default: 10)
-    ///   - fontSize: Font size (default: 16)
-    init(
-        text: Binding<String>,
-        placeholder: String,
-        minLines: Int = 1,
-        maxLines: Int = 10,
-        fontSize: CGFloat = 16
-    ) {
-        self._text = text
-        self.placeholder = placeholder
-        self.minLines = minLines
-        self.maxLines = maxLines
-        self.fontSize = fontSize
-    }
-    
-    // MARK: - Body
-    
     var body: some View {
-        let theme = themeManager.resolved
-        
-        ZStack(alignment: .topLeading) {
-            textEditorView(theme: theme)
-            placeholderView(theme: theme)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
-        .overlay(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                .stroke(theme.border.opacity(Constants.borderOpacity), lineWidth: 1)
+        ThemedTextEditor(
+            text: $text,
+            placeholder: placeholder,
+            characterThemeId: characterThemeId,
+            minHeight: max(CGFloat(minLines) * lineHeight + 12, 36),
+            maxHeight: max(CGFloat(maxLines) * lineHeight + 12, 80)
         )
-    }
-    
-    // MARK: - Subviews
-    
-    /// The main text editor
-    private func textEditorView(theme: ResolvedTheme) -> some View {
-        TextEditor(text: $text)
-            .font(textFont)
-            .fontDesign(theme.fontDesign)
-            .foregroundColor(theme.textPrimary)
-            .scrollContentBackground(.hidden)
-            .frame(
-                minHeight: minHeight,
-                maxHeight: min(max(measuredHeight, minHeight), maxHeight)
-            )
-            .background(theme.backgroundTertiary)
-            .background(
-                HeightMeasurementView(text: text, height: $measuredHeight)
-            )
-    }
-    
-    /// Placeholder text overlay
-    @ViewBuilder
-    private func placeholderView(theme: ResolvedTheme) -> some View {
-        if isEmpty && !placeholder.isEmpty {
-            Text(placeholder)
-                .font(textFont)
-                .fontDesign(theme.fontDesign)
-                .foregroundColor(theme.textSecondary.opacity(0.6))
-                .padding(.horizontal, Constants.placeholderPadding)
-                .padding(.vertical, Constants.placeholderPadding)
-                .allowsHitTesting(false) // Allow taps to pass through to TextEditor
-        }
-    }
-}
-
-// MARK: - HeightMeasurementView
-
-/// A helper view that measures the height of text content.
-///
-/// This view renders the text invisibly and reports its measured height,
-/// allowing the parent to adjust its frame accordingly.
-private struct HeightMeasurementView: View {
-    
-    // MARK: - Properties
-    
-    /// The text to measure
-    let text: String
-    
-    /// Binding to report the measured height
-    @Binding var height: CGFloat
-    
-    // MARK: - Constants
-    
-    private enum Constants {
-        static let horizontalPadding: CGFloat = 4
-        static let verticalPadding: CGFloat = 4
-        static let heightThreshold: CGFloat = 0.5
-    }
-    
-    // MARK: - Body
-    
-    var body: some View {
-        GeometryReader { _ in
-            Text(text.isEmpty ? " " : text)
-                .font(.body)
-                .padding(.horizontal, Constants.horizontalPadding)
-                .padding(.vertical, Constants.verticalPadding)
-                .fixedSize(horizontal: false, vertical: true)
-                .background(heightReporter)
-                .opacity(0) // Invisible - only used for measurement
-        }
-    }
-    
-    // MARK: - Height Reporter
-    
-    /// Reports height changes to the binding
-    private var heightReporter: some View {
-        GeometryReader { geometry in
-            Color.clear
-                .onAppear {
-                    updateHeight(from: geometry)
-                }
-                .onChange(of: geometry.size.height) { _, _ in
-                    updateHeight(from: geometry)
-                }
-        }
-    }
-    
-    /// Updates the height binding if the change is significant
-    private func updateHeight(from geometry: GeometryProxy) {
-        let newHeight = geometry.size.height
-        
-        // Only update if change is significant (avoids layout loops)
-        guard abs(newHeight - height) > Constants.heightThreshold else { return }
-        
-        DispatchQueue.main.async {
-            height = newHeight
-        }
     }
 }

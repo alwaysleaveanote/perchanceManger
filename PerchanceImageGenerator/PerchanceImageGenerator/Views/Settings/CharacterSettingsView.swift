@@ -373,7 +373,8 @@ struct CharacterSettingsView: View {
                 text: characterDefaultBinding(for: selectedDefaultsSection),
                 placeholder: "Default text for this character's \(selectedDefaultsSection.displayLabel.lowercased()) (optional)",
                 minLines: 2,
-                maxLines: 10
+                maxLines: 10,
+                characterThemeId: selectedThemeId
             )
         }
     }

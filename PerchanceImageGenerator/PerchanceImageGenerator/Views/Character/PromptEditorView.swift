@@ -84,7 +84,11 @@ struct PromptEditorView: View {
 
             // Composed preview - Card style
             VStack(alignment: .leading, spacing: 0) {
-                PromptPreviewSection(composedPrompt: composedPrompt, maxHeight: 180)
+                PromptPreviewSection(
+                    composedPrompt: composedPrompt,
+                    maxHeight: 180,
+                    characterThemeId: character.characterThemeId
+                )
             }
             .padding(16)
             .background(
@@ -167,7 +171,8 @@ struct PromptEditorView: View {
                         text: additionalInfoBinding,
                         placeholder: "Any extra details that don't fit in other sections",
                         minLines: 0,
-                        maxLines: 5
+                        maxLines: 5,
+                        characterThemeId: character.characterThemeId
                     )
                 }
             }
@@ -402,7 +407,8 @@ struct PromptEditorView: View {
                 placeholder: "Optional \(label.lowercased()) details",
                 minLines: 0,
                 maxLines: 5,
-                fontSize: 14
+                fontSize: 14,
+                characterThemeId: character.characterThemeId
             )
             .onAppear {
                 updatePresetNameForCurrentText(

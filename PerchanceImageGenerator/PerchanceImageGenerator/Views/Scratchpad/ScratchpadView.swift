@@ -134,10 +134,26 @@ struct ScratchpadView: View {
                     
                     // Prompt Sections Card
                     VStack(alignment: .leading, spacing: 24) {
-                        Text("Prompt Sections")
-                            .font(.headline)
-                            .fontDesign(theme.fontDesign)
-                            .foregroundColor(theme.textPrimary)
+                        HStack {
+                            Text("Prompt Sections")
+                                .font(.headline)
+                                .fontDesign(theme.fontDesign)
+                                .foregroundColor(theme.textPrimary)
+                            
+                            Spacer()
+                            
+                            Button {
+                                fillWithGlobalDefaults()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "arrow.down.doc")
+                                        .font(.caption)
+                                    Text("Set Defaults")
+                                        .font(.caption)
+                                }
+                                .foregroundColor(theme.primary)
+                            }
+                        }
                         
                         sectionsEditor
                     }
@@ -700,6 +716,36 @@ struct ScratchpadView: View {
         stylePresetName = nil
         technicalPresetName = nil
         negativePresetName = nil
+    }
+    
+    /// Fills empty fields with global default values
+    private func fillWithGlobalDefaults() {
+        let defaults = presetStore.globalDefaults
+        
+        if physicalDescription.isEmpty {
+            physicalDescription = defaults[PromptSectionKind.physicalDescription.defaultKey] ?? ""
+        }
+        if outfit.isEmpty {
+            outfit = defaults[PromptSectionKind.outfit.defaultKey] ?? ""
+        }
+        if pose.isEmpty {
+            pose = defaults[PromptSectionKind.pose.defaultKey] ?? ""
+        }
+        if environment.isEmpty {
+            environment = defaults[PromptSectionKind.environment.defaultKey] ?? ""
+        }
+        if lighting.isEmpty {
+            lighting = defaults[PromptSectionKind.lighting.defaultKey] ?? ""
+        }
+        if styleModifiers.isEmpty {
+            styleModifiers = defaults[PromptSectionKind.style.defaultKey] ?? ""
+        }
+        if technicalModifiers.isEmpty {
+            technicalModifiers = defaults[PromptSectionKind.technical.defaultKey] ?? ""
+        }
+        if negativePrompt.isEmpty {
+            negativePrompt = defaults[PromptSectionKind.negative.defaultKey] ?? ""
+        }
 
         scratchpadPrompt = ""
     }
