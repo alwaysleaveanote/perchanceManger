@@ -51,7 +51,8 @@ struct ThemePicker: View {
                             isSelected: selectedThemeId == availableTheme.id,
                             action: {
                                 onSelect(availableTheme.id)
-                            }
+                            },
+                            stylingTheme: theme
                         )
                     }
                 }

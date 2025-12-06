@@ -598,18 +598,16 @@ struct GlobalThemedNavigationTitle: ViewModifier {
 
 struct ThemedTabBar: ViewModifier {
     @EnvironmentObject var themeManager: ThemeManager
-    @State private var tabBarId = UUID()
     
     func body(content: Content) -> some View {
         content
-            .id(tabBarId) // Force refresh when theme changes
             .onAppear {
                 updateTabBarAppearance()
             }
-            .onChange(of: themeManager.resolved.source.id) { _, _ in
+            .onChange(of: themeManager.globalThemeId) { _, _ in
+                // Update tab bar appearance when global theme changes
+                // Do NOT recreate the view - this breaks keyboard toolbars
                 updateTabBarAppearance()
-                // Force TabView to recreate by changing its id
-                tabBarId = UUID()
             }
     }
     
@@ -672,8 +670,15 @@ struct ThemePreviewCard: View {
     let theme: AppTheme
     let isSelected: Bool
     let action: () -> Void
+    /// Optional styling theme - if nil, uses the theme being previewed for styling
+    var stylingTheme: ResolvedTheme? = nil
     
     @EnvironmentObject var themeManager: ThemeManager
+    
+    /// The theme to use for card styling (text colors, backgrounds, etc.)
+    private var cardTheme: ResolvedTheme {
+        stylingTheme ?? themeManager.resolved
+    }
     
     /// Get the icon for a theme based on its id
     private var themeIcon: String {
@@ -706,7 +711,7 @@ struct ThemePreviewCard: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                // Theme icon
+                // Theme icon - uses the theme being previewed
                 Image(systemName: themeIcon)
                     .font(.system(size: 24))
                     .foregroundColor(Color(hex: theme.colors.primary))
@@ -723,18 +728,18 @@ struct ThemePreviewCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(theme.name)
                         .font(.headline)
-                        .foregroundColor(themeManager.resolved.textPrimary)
+                        .foregroundColor(cardTheme.textPrimary)
                     
                     Text(theme.description)
                         .font(.caption)
-                        .foregroundColor(themeManager.resolved.textSecondary)
+                        .foregroundColor(cardTheme.textSecondary)
                         .lineLimit(isSelected ? nil : 2)
                         .animation(.easeInOut(duration: 0.2), value: isSelected)
                 }
                 
                 Spacer()
                 
-                // Color preview dots
+                // Color preview dots - uses the theme being previewed
                 HStack(spacing: 3) {
                     Circle()
                         .fill(Color(hex: theme.colors.primary))
@@ -748,11 +753,11 @@ struct ThemePreviewCard: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(themeManager.resolved.backgroundSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: themeManager.resolved.cornerRadiusMedium))
+        .background(cardTheme.backgroundSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: cardTheme.cornerRadiusMedium))
         .overlay(
-            RoundedRectangle(cornerRadius: themeManager.resolved.cornerRadiusMedium)
-                .stroke(isSelected ? themeManager.resolved.primary : Color.clear, lineWidth: 2)
+            RoundedRectangle(cornerRadius: cardTheme.cornerRadiusMedium)
+                .stroke(isSelected ? cardTheme.primary : Color.clear, lineWidth: 2)
         )
     }
 }
