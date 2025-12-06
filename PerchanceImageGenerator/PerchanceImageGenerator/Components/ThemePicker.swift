@@ -104,7 +104,18 @@ struct CompactThemePicker: View {
     @EnvironmentObject var themeManager: ThemeManager
     @State private var isExpanded: Bool = false
     
+    /// The theme to use for styling - based on selected theme for preview
+    private var previewTheme: ResolvedTheme {
+        if let themeId = selectedThemeId,
+           let theme = themeManager.availableThemes.first(where: { $0.id == themeId }) {
+            return ResolvedTheme(source: theme)
+        }
+        return themeManager.resolved
+    }
+    
     var body: some View {
+        let theme = previewTheme
+        
         VStack(alignment: .leading, spacing: 8) {
             Button(action: {
                 withAnimation {
@@ -115,36 +126,36 @@ struct CompactThemePicker: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Theme")
                             .font(.subheadline)
-                            .foregroundColor(themeManager.resolved.textSecondary)
+                            .foregroundColor(theme.textSecondary)
                         
                         Text(selectedThemeName)
                             .font(.body)
-                            .foregroundColor(themeManager.resolved.textPrimary)
+                            .foregroundColor(theme.textPrimary)
                     }
                     
                     Spacer()
                     
                     // Color preview dots
-                    if let theme = selectedTheme {
+                    if let selectedAppTheme = selectedTheme {
                         HStack(spacing: 4) {
                             Circle()
-                                .fill(Color(hex: theme.colors.primary))
+                                .fill(Color(hex: selectedAppTheme.colors.primary))
                                 .frame(width: 16, height: 16)
                             Circle()
-                                .fill(Color(hex: theme.colors.secondary))
+                                .fill(Color(hex: selectedAppTheme.colors.secondary))
                                 .frame(width: 16, height: 16)
                         }
                     }
                     
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.subheadline)
-                        .foregroundColor(themeManager.resolved.textSecondary)
+                        .foregroundColor(theme.textSecondary)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
                 .background(
-                    RoundedRectangle(cornerRadius: themeManager.resolved.cornerRadiusSmall)
-                        .fill(themeManager.resolved.backgroundSecondary)
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .fill(theme.backgroundSecondary)
                 )
             }
             .buttonStyle(.plain)
@@ -153,11 +164,11 @@ struct CompactThemePicker: View {
                 ScrollView {
                     VStack(spacing: 8) {
                         if showInheritOption {
-                            themeOptionRow(theme: nil, label: "Use Global Theme", isSelected: selectedThemeId == nil)
+                            themeOptionRow(appTheme: nil, label: "Use Global Theme", isSelected: selectedThemeId == nil, currentTheme: theme)
                         }
                         
-                        ForEach(themeManager.availableThemes) { theme in
-                            themeOptionRow(theme: theme, label: theme.name, isSelected: selectedThemeId == theme.id)
+                        ForEach(themeManager.availableThemes) { appTheme in
+                            themeOptionRow(appTheme: appTheme, label: appTheme.name, isSelected: selectedThemeId == appTheme.id, currentTheme: theme)
                         }
                     }
                 }
@@ -183,45 +194,45 @@ struct CompactThemePicker: View {
         return themeManager.availableThemes.first(where: { $0.id == themeManager.globalThemeId })
     }
     
-    private func themeOptionRow(theme: AppTheme?, label: String, isSelected: Bool) -> some View {
+    private func themeOptionRow(appTheme: AppTheme?, label: String, isSelected: Bool, currentTheme: ResolvedTheme) -> some View {
         Button(action: {
-            onSelect(theme?.id)
+            onSelect(appTheme?.id)
             withAnimation {
                 isExpanded = false
             }
         }) {
             HStack {
-                if let theme = theme {
+                if let appTheme = appTheme {
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(Color(hex: theme.colors.primary))
+                            .fill(Color(hex: appTheme.colors.primary))
                             .frame(width: 14, height: 14)
                         Circle()
-                            .fill(Color(hex: theme.colors.secondary))
+                            .fill(Color(hex: appTheme.colors.secondary))
                             .frame(width: 14, height: 14)
                     }
                 } else {
                     Image(systemName: "arrow.uturn.backward.circle")
-                        .foregroundColor(themeManager.resolved.textSecondary)
+                        .foregroundColor(currentTheme.textSecondary)
                 }
                 
                 Text(label)
                     .font(.subheadline)
-                    .foregroundColor(themeManager.resolved.textPrimary)
+                    .foregroundColor(currentTheme.textPrimary)
                 
                 Spacer()
                 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundColor(themeManager.resolved.primary)
+                        .foregroundColor(currentTheme.primary)
                         .font(.subheadline.weight(.semibold))
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: themeManager.resolved.cornerRadiusSmall)
-                    .fill(isSelected ? themeManager.resolved.primary.opacity(0.1) : themeManager.resolved.backgroundTertiary)
+                RoundedRectangle(cornerRadius: currentTheme.cornerRadiusSmall)
+                    .fill(isSelected ? currentTheme.primary.opacity(0.1) : currentTheme.backgroundTertiary)
             )
         }
         .buttonStyle(.plain)

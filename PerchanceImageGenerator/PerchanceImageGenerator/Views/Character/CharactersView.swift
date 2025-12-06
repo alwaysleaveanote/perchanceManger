@@ -78,18 +78,21 @@ struct CharactersView: View {
                                 .listRowBackground(theme.backgroundSecondary)
                         } else {
                             ForEach(Array(characters.enumerated()), id: \.element.id) { index, character in
-                                // NavigationLink with custom row content
-                                // Use .buttonStyle(.plain) to prevent default styling
-                                // CharacterRowView includes its own themed chevron
-                                NavigationLink {
-                                    CharacterDetailView(
-                                        character: $characters[index],
-                                        openGenerator: openGenerator
-                                    )
-                                } label: {
+                                // Use NavigationLink with EmptyView label to hide default chevron
+                                // CharacterRowView provides the visible content with custom themed chevron
+                                ZStack {
+                                    NavigationLink {
+                                        CharacterDetailView(
+                                            character: $characters[index],
+                                            openGenerator: openGenerator
+                                        )
+                                    } label: {
+                                        EmptyView()
+                                    }
+                                    .opacity(0)
+                                    
                                     CharacterRowView(character: character)
                                 }
-                                .buttonStyle(.plain)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                                 .listRowSeparator(.hidden)
@@ -215,13 +218,9 @@ struct CharacterRowView: View {
     
     /// The character's resolved theme (custom or global)
     /// Uses the new simplified ThemeManager helper
+    /// If no custom theme, falls back to global theme
     private var resolvedTheme: ResolvedTheme {
         themeManager.resolvedTheme(forCharacterThemeId: character.characterThemeId)
-    }
-    
-    /// Whether this character has a custom theme
-    private var hasCustomTheme: Bool {
-        character.hasCustomTheme
     }
     
     // MARK: - Body
@@ -290,15 +289,15 @@ struct CharacterRowView: View {
         }
     }
     
-    /// Row background (highlighted for custom theme)
+    /// Row background - always shows the character's theme background
     private func rowBackground(theme: ResolvedTheme) -> some View {
         RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-            .fill(hasCustomTheme ? theme.background : Color.clear)
+            .fill(theme.backgroundSecondary)
     }
     
-    /// Row border (visible for custom theme)
+    /// Row border - subtle border using the character's theme
     private func rowBorder(theme: ResolvedTheme) -> some View {
         RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-            .stroke(hasCustomTheme ? theme.primary.opacity(0.3) : Color.clear, lineWidth: 1)
+            .stroke(theme.border.opacity(0.3), lineWidth: 1)
     }
 }

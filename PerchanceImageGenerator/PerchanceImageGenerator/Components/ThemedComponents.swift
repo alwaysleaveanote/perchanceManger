@@ -255,15 +255,18 @@ struct ThemedDivider: View {
 struct ThemedTextField: View {
     let placeholder: String
     @Binding var text: String
+    var characterThemeId: String? = nil
     
     @EnvironmentObject var themeManager: ThemeManager
     @FocusState private var isFocused: Bool
     
+    private var theme: ResolvedTheme {
+        themeManager.resolvedTheme(forCharacterThemeId: characterThemeId)
+    }
+    
     var body: some View {
-        let theme = themeManager.resolved
-        
         TextField(placeholder, text: $text)
-            .font(.body)
+            .font(.subheadline)
             .fontDesign(theme.fontDesign)
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
@@ -392,6 +395,93 @@ extension View {
     /// Use this for views that should always use the global theme, ignoring character overrides
     func globalThemedNavigationBar() -> some View {
         modifier(GlobalThemedNavigationTitle())
+    }
+    
+    /// Use this for character pages that should use the character's theme
+    func characterThemedNavigationBar(characterThemeId: String?) -> some View {
+        modifier(CharacterThemedNavigationTitle(characterThemeId: characterThemeId))
+    }
+}
+
+// MARK: - Character Themed Navigation Title
+
+/// A navigation bar modifier that uses the character's theme (or global if none set)
+struct CharacterThemedNavigationTitle: ViewModifier {
+    let characterThemeId: String?
+    
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    private var theme: ResolvedTheme {
+        themeManager.resolvedTheme(forCharacterThemeId: characterThemeId)
+    }
+    
+    private var themeData: AppTheme {
+        themeManager.theme(forCharacterThemeId: characterThemeId)
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .toolbarColorScheme(colorScheme, for: .navigationBar)
+            .toolbarBackground(theme.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .tint(theme.primary)
+            .onAppear {
+                updateNavigationBarAppearance()
+            }
+            .onChange(of: characterThemeId) { _, _ in
+                updateNavigationBarAppearance()
+            }
+    }
+    
+    private func updateNavigationBarAppearance() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(theme.background)
+        
+        // Get the appropriate font for the theme
+        let titleFont: UIFont
+        switch themeData.typography.fontFamily {
+        case "serif":
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.serif)!, size: 18)
+        case "rounded":
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.rounded)!, size: 18)
+        case "monospaced":
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.monospaced)!, size: 18)
+        default:
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.default)!, size: 18)
+        }
+        
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor(theme.primary),
+            .font: titleFont
+        ]
+        appearance.largeTitleTextAttributes = [
+            .foregroundColor: UIColor(theme.primary),
+            .font: UIFont(descriptor: titleFont.fontDescriptor, size: 34)
+        ]
+        
+        let buttonAppearance = UIBarButtonItemAppearance()
+        buttonAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor(theme.primary)
+        ]
+        appearance.buttonAppearance = buttonAppearance
+        appearance.doneButtonAppearance = buttonAppearance
+    }
+    
+    private var colorScheme: ColorScheme {
+        let bgHex = themeData.colors.background
+        return isLightColor(hex: bgHex) ? .light : .dark
+    }
+    
+    private func isLightColor(hex: String) -> Bool {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let r = Double((int >> 16) & 0xFF) / 255.0
+        let g = Double((int >> 8) & 0xFF) / 255.0
+        let b = Double(int & 0xFF) / 255.0
+        let luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        return luminance > 0.5
     }
 }
 

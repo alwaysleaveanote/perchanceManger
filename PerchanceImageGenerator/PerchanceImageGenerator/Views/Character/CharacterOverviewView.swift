@@ -273,14 +273,14 @@ struct CharacterOverviewView: View {
                         Text("Title")
                             .font(.caption.weight(.medium))
                             .foregroundColor(theme.textSecondary)
-                        ThemedTextField(placeholder: "e.g. Character Reference", text: $newLinkTitle)
+                        ThemedTextField(placeholder: "e.g. Character Reference", text: $newLinkTitle, characterThemeId: character.characterThemeId)
                     }
                     
                     VStack(alignment: .leading, spacing: 6) {
                         Text("URL")
                             .font(.caption.weight(.medium))
                             .foregroundColor(theme.textSecondary)
-                        ThemedTextField(placeholder: "https://...", text: $newLinkURL)
+                        ThemedTextField(placeholder: "https://...", text: $newLinkURL, characterThemeId: character.characterThemeId)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                     }

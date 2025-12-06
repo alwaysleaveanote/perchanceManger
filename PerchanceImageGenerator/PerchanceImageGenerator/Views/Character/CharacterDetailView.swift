@@ -53,7 +53,7 @@ struct CharacterDetailView: View {
         }
         .navigationTitle(character.name.isEmpty ? "Character" : character.name)
         .navigationBarTitleDisplayMode(.inline)
-        .themedNavigationBar()
+        .characterThemedNavigationBar(characterThemeId: character.characterThemeId)
         .navigationBarBackButtonHidden(selectedPromptIndex != nil)
         .toolbar {
             // Custom back button when viewing a prompt - goes to overview instead of character list
