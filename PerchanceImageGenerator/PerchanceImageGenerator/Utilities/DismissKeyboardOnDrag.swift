@@ -1,13 +1,6 @@
-//
-//  DismissKeyboardOnDrag.swift
-//  PerchanceImageGenerator
-//
-//  Created by Alex Gingras on 12/5/25.
-//
-
-
 import SwiftUI
 
+/// View modifier that dismisses keyboard on drag gesture
 struct DismissKeyboardOnDrag: ViewModifier {
     func body(content: Content) -> some View {
         content.gesture(

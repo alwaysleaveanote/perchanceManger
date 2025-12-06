@@ -1,0 +1,59 @@
+{
+    "id": "bubblegum",
+    "name": "Bubblegum",
+    "description": "Sweet and playful with soft pinks and sky blues",
+    "colors": {
+        "primary": "#E8A0B0",
+        "primaryVariant": "#D890A0",
+        "secondary": "#90C8E0",
+        "secondaryVariant": "#80B8D0",
+        "background": "#FDF9FA",
+        "backgroundSecondary": "#F8F2F4",
+        "backgroundTertiary": "#F2EAED",
+        "textPrimary": "#4A3A40",
+        "textSecondary": "#7A6A70",
+        "textAccent": "#E8A0B0",
+        "textOnPrimary": "#4A3A40",
+        "border": "#E8D8DC",
+        "divider": "#F0E4E8",
+        "shadow": "#D0A0B0",
+        "success": "#5CB88A",
+        "warning": "#E8A840",
+        "error": "#D05050",
+        "tabBarBackground": "#F8F2F4",
+        "tabBarSelected": "#E8A0B0",
+        "tabBarUnselected": "#B0A0A8"
+    },
+    "typography": {
+        "fontFamily": "rounded",
+        "fontWeight": "medium",
+        "titleStyle": "none",
+        "letterSpacing": 0.4,
+        "lineHeightMultiplier": 1.25
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "light",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 12,
+        "paddingMedium": 18,
+        "paddingLarge": 26,
+        "cornerRadiusSmall": 16,
+        "cornerRadiusMedium": 24,
+        "cornerRadiusLarge": 32,
+        "itemSpacing": 12,
+        "sectionSpacing": 22
+    },
+    "effects": {
+        "useGradientBackground": true,
+        "gradientColors": ["#FDF9FA", "#FAF4F6", "#F6EEF2"],
+        "gradientAngle": 145,
+        "shadowRadius": 12,
+        "shadowOpacity": 0.08,
+        "blurRadius": 0,
+        "buttonStyle": "soft",
+        "cardStyle": "elevated"
+    }
+}

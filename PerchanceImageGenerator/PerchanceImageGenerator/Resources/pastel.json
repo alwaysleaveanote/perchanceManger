@@ -1,0 +1,67 @@
+{
+    "id": "pastel",
+    "name": "Pastel Dreams",
+    "description": "Soft, gentle colors with a cozy aesthetic.",
+    "colors": {
+        "primary": "#F8A5C2",
+        "primaryVariant": "#F78FB3",
+        "secondary": "#A29BFE",
+        "secondaryVariant": "#6C5CE7",
+        "background": "#FFF5F7",
+        "backgroundSecondary": "#FFEEF2",
+        "backgroundTertiary": "#FFE4EC",
+        "textPrimary": "#5D4E60",
+        "textSecondary": "#9B8A9E",
+        "textAccent": "#F78FB3",
+        "textOnPrimary": "#FFFFFF",
+        "border": "#F8C8DC",
+        "divider": "#F8C8DC",
+        "shadow": "#F8A5C2",
+        "success": "#00B894",
+        "warning": "#FDCB6E",
+        "error": "#E74C3C",
+        "tabBarBackground": "#FFF5F7",
+        "tabBarSelected": "#F78FB3",
+        "tabBarUnselected": "#C8B6C8"
+    },
+    "typography": {
+        "fontFamily": "rounded",
+        "fontWeight": "medium",
+        "titleStyle": "none",
+        "letterSpacing": 0.3,
+        "lineHeightMultiplier": 1.2
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "medium",
+        "icons": {
+            "gearshape": "heart.circle",
+            "person.3": "heart.text.square",
+            "square.and.pencil": "pencil.and.scribble",
+            "plus": "sparkle",
+            "trash": "heart.slash",
+            "checkmark.circle.fill": "heart.circle.fill",
+            "line.3.horizontal": "line.3.horizontal.decrease.circle"
+        }
+    },
+    "spacing": {
+        "cornerRadiusSmall": 12,
+        "cornerRadiusMedium": 18,
+        "cornerRadiusLarge": 24,
+        "paddingSmall": 10,
+        "paddingMedium": 14,
+        "paddingLarge": 20,
+        "itemSpacing": 10,
+        "sectionSpacing": 20
+    },
+    "effects": {
+        "shadowRadius": 8,
+        "shadowOpacity": 0.15,
+        "blurRadius": 0,
+        "useGradientBackground": true,
+        "gradientColors": ["#FFF5F7", "#FFEEF2", "#F8E1E7"],
+        "gradientAngle": 135,
+        "buttonStyle": "soft",
+        "cardStyle": "elevated"
+    }
+}

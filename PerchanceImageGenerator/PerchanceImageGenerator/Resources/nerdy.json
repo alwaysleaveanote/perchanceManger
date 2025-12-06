@@ -1,0 +1,59 @@
+{
+    "id": "nerdy",
+    "name": "Code Editor",
+    "description": "Clean developer aesthetic with terminal green accents",
+    "colors": {
+        "primary": "#00C878",
+        "primaryVariant": "#00B068",
+        "secondary": "#6B8AFF",
+        "secondaryVariant": "#5B7AEF",
+        "background": "#1A1D24",
+        "backgroundSecondary": "#22262E",
+        "backgroundTertiary": "#2A2E38",
+        "textPrimary": "#E8ECF0",
+        "textSecondary": "#9AA0A8",
+        "textAccent": "#00C878",
+        "textOnPrimary": "#1A1D24",
+        "border": "#3A4048",
+        "divider": "#323840",
+        "shadow": "#000000",
+        "success": "#00C878",
+        "warning": "#F0B840",
+        "error": "#E85858",
+        "tabBarBackground": "#22262E",
+        "tabBarSelected": "#00C878",
+        "tabBarUnselected": "#6A7078"
+    },
+    "typography": {
+        "fontFamily": "monospaced",
+        "fontWeight": "regular",
+        "titleStyle": "none",
+        "letterSpacing": 0.3,
+        "lineHeightMultiplier": 1.2
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "regular",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 8,
+        "paddingMedium": 14,
+        "paddingLarge": 22,
+        "cornerRadiusSmall": 6,
+        "cornerRadiusMedium": 10,
+        "cornerRadiusLarge": 14,
+        "itemSpacing": 10,
+        "sectionSpacing": 18
+    },
+    "effects": {
+        "useGradientBackground": false,
+        "gradientAngle": 180,
+        "shadowRadius": 8,
+        "shadowOpacity": 0.4,
+        "blurRadius": 0,
+        "gradientColors": [],
+        "buttonStyle": "outlined",
+        "cardStyle": "bordered"
+    }
+}

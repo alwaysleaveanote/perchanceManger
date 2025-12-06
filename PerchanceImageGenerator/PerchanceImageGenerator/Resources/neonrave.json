@@ -1,0 +1,59 @@
+{
+    "id": "neonrave",
+    "name": "Neon Rave",
+    "description": "Electric nightlife with vibrant magenta and cyan",
+    "colors": {
+        "primary": "#E040FB",
+        "primaryVariant": "#D030EB",
+        "secondary": "#00E5FF",
+        "secondaryVariant": "#00D5EF",
+        "background": "#0A0A12",
+        "backgroundSecondary": "#12121A",
+        "backgroundTertiary": "#1A1A24",
+        "textPrimary": "#FFFFFF",
+        "textSecondary": "#B0A0C0",
+        "textAccent": "#E040FB",
+        "textOnPrimary": "#0A0A12",
+        "border": "#4A3A5A",
+        "divider": "#3A2A4A",
+        "shadow": "#E040FB",
+        "success": "#00E878",
+        "warning": "#FFE040",
+        "error": "#FF3030",
+        "tabBarBackground": "#12121A",
+        "tabBarSelected": "#E040FB",
+        "tabBarUnselected": "#7A6A8A"
+    },
+    "typography": {
+        "fontFamily": "rounded",
+        "fontWeight": "bold",
+        "titleStyle": "none",
+        "letterSpacing": 1.5,
+        "lineHeightMultiplier": 1.15
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "bold",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 10,
+        "paddingMedium": 16,
+        "paddingLarge": 24,
+        "cornerRadiusSmall": 12,
+        "cornerRadiusMedium": 18,
+        "cornerRadiusLarge": 26,
+        "itemSpacing": 10,
+        "sectionSpacing": 20
+    },
+    "effects": {
+        "useGradientBackground": false,
+        "gradientAngle": 45,
+        "shadowRadius": 16,
+        "shadowOpacity": 0.5,
+        "blurRadius": 0,
+        "gradientColors": [],
+        "buttonStyle": "filled",
+        "cardStyle": "elevated"
+    }
+}

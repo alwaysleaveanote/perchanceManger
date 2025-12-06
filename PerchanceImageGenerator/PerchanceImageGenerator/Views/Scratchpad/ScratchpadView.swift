@@ -16,6 +16,7 @@ struct ScratchpadView: View {
     let openGenerator: (String) -> Void
 
     @EnvironmentObject var presetStore: PromptPresetStore
+    @EnvironmentObject var themeManager: ThemeManager
 
     // Section texts (same structure as character prompts)
     @State private var physicalDescription: String = ""
@@ -56,14 +57,23 @@ struct ScratchpadView: View {
     // Add-to-character flow
     @State private var addToCharacterTitle: String = ""
 
-    // Save-as-preset flow (same pattern as in character prompt)
+    // Save-as-preset flow
     @State private var isShowingPresetSaveAlert: Bool = false
     @State private var pendingPresetKind: PromptSectionKind? = nil
     @State private var pendingPresetText: String = ""
     @State private var pendingPresetLabel: String = ""
     @State private var pendingPresetNameInput: String = ""
+    
+    // Duplicate warning
+    @State private var showDuplicateWarning: Bool = false
+    
+    // Empty scratch warning
+    @State private var showEmptyWarning: Bool = false
+    
+    // Clear confirmation
+    @State private var showClearConfirmation: Bool = false
 
-    // MARK: - Composed scratch prompt (global defaults only, no character overrides)
+    // MARK: - Composed scratch prompt
 
     private var composedScratchPrompt: String {
         let scratch = SavedPrompt(
@@ -88,7 +98,6 @@ struct ScratchpadView: View {
             negativePresetName: negativePresetName
         )
 
-        // Dummy character with NO overrides so only global defaults are used
         let scratchCharacter = CharacterProfile(
             name: "",
             bio: "",
@@ -107,177 +116,90 @@ struct ScratchpadView: View {
     // MARK: - Body
 
     var body: some View {
+        let theme = themeManager.resolved
+        
         NavigationView {
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-
-                        // Header – no title field, just context + actions
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Scratchpad Prompt")
-                                .font(.headline)
-
-                            Text("Use the sections below to build a prompt. Global defaults are applied automatically.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-
-                            HStack(spacing: 12) {
-                                Spacer()
-
-                                Button {
-                                    saveCurrentScratch()
-                                } label: {
-                                    Label("Save Scratch", systemImage: "square.and.arrow.down")
-                                        .font(.caption.weight(.semibold))
-                                }
-                                .buttonStyle(.bordered)
-
-                                Button {
-                                    addToCharacterTitle = ""
-                                    activeSheet = .addToCharacter
-                                } label: {
-                                    Label("Add to Character", systemImage: "person.crop.circle.badge.plus")
-                                        .font(.caption.weight(.semibold))
-                                }
-                                .buttonStyle(.bordered)
-                                .disabled(characters.isEmpty)
-
-                                Button {
-                                    activeSheet = .savedScratches
-                                } label: {
-                                    Label(
-                                        "See Saved Scratches" +
-                                        (scratchpadSaved.isEmpty ? "" : " (\(scratchpadSaved.count))"),
-                                        systemImage: "tray.full"
-                                    )
-                                    .font(.caption.weight(.semibold))
-                                }
-                                .buttonStyle(.bordered)
-
-                                Spacer()
-                            }
-                        }
-
-                        // Preview
-                        promptPreviewSection
-
-                        // Decomposed sections (matching character prompt style)
-                        VStack(alignment: .leading, spacing: 12) {
-                            sectionRow(
-                                label: "Physical Description",
-                                kind: .physicalDescription,
-                                text: $physicalDescription,
-                                presetName: $physicalPresetName
-                            )
-
-                            sectionRow(
-                                label: "Outfit",
-                                kind: .outfit,
-                                text: $outfit,
-                                presetName: $outfitPresetName
-                            )
-
-                            sectionRow(
-                                label: "Pose",
-                                kind: .pose,
-                                text: $pose,
-                                presetName: $posePresetName
-                            )
-
-                            sectionRow(
-                                label: "Environment",
-                                kind: .environment,
-                                text: $environment,
-                                presetName: $environmentPresetName
-                            )
-
-                            sectionRow(
-                                label: "Lighting",
-                                kind: .lighting,
-                                text: $lighting,
-                                presetName: $lightingPresetName
-                            )
-
-                            sectionRow(
-                                label: "Style Modifiers",
-                                kind: .style,
-                                text: $styleModifiers,
-                                presetName: $stylePresetName
-                            )
-
-                            sectionRow(
-                                label: "Technical Modifiers",
-                                kind: .technical,
-                                text: $technicalModifiers,
-                                presetName: $technicalPresetName
-                            )
-
-                            sectionRow(
-                                label: "Negative Prompt",
-                                kind: .negative,
-                                text: $negativePrompt,
-                                presetName: $negativePresetName
-                            )
-
-                            // Additional info (no presets)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Additional Information")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-
-                                DynamicGrowingTextEditor(
-                                    text: $additionalInfo,
-                                    placeholder: "Any extra details that don't fit in other sections",
-                                    minLines: 0,
-                                    maxLines: 5
-                                )
-                            }
-                        }
-
-                        // Open generator + Clear
-                        HStack(spacing: 12) {
-                            Spacer()
-
-                            Button {
-                                let full = composedScratchPrompt
-                                scratchpadPrompt = full      // keep backing string in sync
-                                openGenerator(full)
-                            } label: {
-                                Label("Open Generator", systemImage: "sparkles")
-                                    .font(.subheadline.weight(.semibold))
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 10)
-                            }
-                            .buttonStyle(.borderedProminent)
-
-                            Button(role: .destructive) {
-                                clearScratchFields()
-                            } label: {
-                                Label("Clear", systemImage: "trash")
-                                    .font(.subheadline.weight(.semibold))
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 10)
-                            }
-                            .buttonStyle(.bordered)
-
-                            Spacer()
-                        }
-                        .padding(.top, 4)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Prompt Preview Card
+                    VStack(alignment: .leading, spacing: 0) {
+                        PromptPreviewSection(composedPrompt: composedScratchPrompt)
                     }
-                    .padding()
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                            .fill(theme.backgroundSecondary)
+                    )
+                    .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+                    
+                    // Prompt Sections Card
+                    VStack(alignment: .leading, spacing: 24) {
+                        Text("Prompt Sections")
+                            .font(.headline)
+                            .fontDesign(theme.fontDesign)
+                            .foregroundColor(theme.textPrimary)
+                        
+                        sectionsEditor
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                            .fill(theme.backgroundSecondary)
+                    )
+                    .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+                    
+                    // Action buttons at bottom of scroll
+                    actionButtonsSection
                 }
+                .padding()
             }
+            .themedBackground()
             .navigationTitle("Scratchpad")
+            .navigationBarTitleDisplayMode(.inline)
+            .themedNavigationBar()
             .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button {
+                            activeSheet = .savedScratches
+                        } label: {
+                            Label("Saved Scratches" + (scratchpadSaved.isEmpty ? "" : " (\(scratchpadSaved.count))"), systemImage: "tray.full")
+                        }
+                        
+                        Button {
+                            saveCurrentScratch()
+                        } label: {
+                            Label("Save Current", systemImage: "square.and.arrow.down")
+                        }
+                        
+                        if !characters.isEmpty {
+                            Button {
+                                addToCharacterTitle = ""
+                                activeSheet = .addToCharacter
+                            } label: {
+                                Label("Add to Character", systemImage: "person.badge.plus")
+                            }
+                        }
+                        
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.system(size: 18))
+                            .foregroundColor(theme.primary)
+                    }
+                }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Done") {
+                    Button {
                         KeyboardHelper.dismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.secondary)
                     }
                 }
             }
         }
-        // Single sheet router for both overlays
+        .navigationViewStyle(.stack)
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .savedScratches:
@@ -287,7 +209,7 @@ struct ScratchpadView: View {
                         loadScratch(prompt)
                     }
                 )
-                .presentationDetents([.fraction(0.25), .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
 
             case .addToCharacter:
@@ -298,11 +220,10 @@ struct ScratchpadView: View {
                         addCurrentScratch(to: characterId, withTitle: title)
                     }
                 )
-                .presentationDetents([.height(260), .medium])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
         }
-        // Save-as-preset alert (same concept as in character view)
         .alert("Save as preset", isPresented: $isShowingPresetSaveAlert) {
             TextField("Preset name", text: $pendingPresetNameInput)
 
@@ -319,7 +240,6 @@ struct ScratchpadView: View {
                         name: finalName,
                         text: pendingPresetText
                     )
-                    // After saving, the onChange handlers will recompute which preset is in use
                 }
 
                 pendingPresetKind = nil
@@ -337,49 +257,156 @@ struct ScratchpadView: View {
         } message: {
             Text("Save the current text as a reusable preset for this section.")
         }
-    }
-
-    // MARK: - Preview section
-
-    private var promptPreviewSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Prompt Preview")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-
-                Spacer()
-
-                Button {
-                    UIPasteboard.general.string = composedScratchPrompt
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "doc.on.doc")
-                        Text("Copy")
-                    }
-                    .font(.caption)
-                }
+        .alert("Duplicate Scratch", isPresented: $showDuplicateWarning) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("This scratch prompt has already been saved. Make some changes before saving again.")
+        }
+        .alert("Empty Scratch", isPresented: $showEmptyWarning) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Please fill out at least one field before saving a scratch prompt.")
+        }
+        .alert("Clear Scratchpad?", isPresented: $showClearConfirmation) {
+            Button("Clear", role: .destructive) {
+                clearScratchFields()
             }
-
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(.secondarySystemBackground))
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
-
-                ScrollView {
-                    Text(composedScratchPrompt)
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.leading)
-                        .padding(12)
-                }
-            }
-            .frame(height: 250)
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to clear all fields? This cannot be undone.")
         }
     }
 
-    // MARK: - Section row (styled like character prompt)
+    // MARK: - Action Buttons Section
+
+    private var actionButtonsSection: some View {
+        let theme = themeManager.resolved
+        
+        return HStack(spacing: 12) {
+            // Clear button - Dangerous action
+            Button {
+                showClearConfirmation = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14, weight: .medium))
+                    Text("Clear")
+                        .font(.subheadline.weight(.medium))
+                }
+                .foregroundColor(theme.error)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(theme.backgroundSecondary)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(theme.error.opacity(0.3), lineWidth: 1)
+                )
+            }
+            
+            // Open Generator - Primary action
+            Button {
+                let full = composedScratchPrompt
+                scratchpadPrompt = full
+                openGenerator(full)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text("Open Generator")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundColor(theme.textOnPrimary)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 14)
+                .background(theme.primary)
+                .clipShape(Capsule())
+                .shadow(color: theme.primary.opacity(0.4), radius: 8, x: 0, y: 4)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+    }
+
+    // MARK: - Sections Editor
+
+    private var sectionsEditor: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            sectionRow(
+                label: "Physical Description",
+                kind: .physicalDescription,
+                text: $physicalDescription,
+                presetName: $physicalPresetName
+            )
+
+            sectionRow(
+                label: "Outfit",
+                kind: .outfit,
+                text: $outfit,
+                presetName: $outfitPresetName
+            )
+
+            sectionRow(
+                label: "Pose",
+                kind: .pose,
+                text: $pose,
+                presetName: $posePresetName
+            )
+
+            sectionRow(
+                label: "Environment",
+                kind: .environment,
+                text: $environment,
+                presetName: $environmentPresetName
+            )
+
+            sectionRow(
+                label: "Lighting",
+                kind: .lighting,
+                text: $lighting,
+                presetName: $lightingPresetName
+            )
+
+            sectionRow(
+                label: "Style Modifiers",
+                kind: .style,
+                text: $styleModifiers,
+                presetName: $stylePresetName
+            )
+
+            sectionRow(
+                label: "Technical Modifiers",
+                kind: .technical,
+                text: $technicalModifiers,
+                presetName: $technicalPresetName
+            )
+
+            sectionRow(
+                label: "Negative Prompt",
+                kind: .negative,
+                text: $negativePrompt,
+                presetName: $negativePresetName
+            )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Additional Information")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .fontDesign(themeManager.resolved.fontDesign)
+                    .foregroundColor(themeManager.resolved.textPrimary)
+
+                DynamicGrowingTextEditor(
+                    text: $additionalInfo,
+                    placeholder: "Any extra details that don't fit in other sections",
+                    minLines: 0,
+                    maxLines: 5
+                )
+            }
+        }
+    }
+
+
+    // MARK: - Section Row
 
     private func sectionRow(
         label: String,
@@ -387,17 +414,20 @@ struct ScratchpadView: View {
         text: Binding<String>,
         presetName: Binding<String?>
     ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let theme = themeManager.resolved
+        
+        return VStack(alignment: .leading, spacing: 10) {
+            // Label row
             HStack(spacing: 8) {
                 Text(label)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+                    .font(.subheadline.weight(.semibold))
+                    .fontDesign(theme.fontDesign)
+                    .foregroundColor(theme.textPrimary)
 
                 let presets = presetStore.presets(of: kind)
                 let trimmed = text.wrappedValue
                     .trimmingCharacters(in: .whitespacesAndNewlines)
 
-                // Apply menu for known presets
                 if !presets.isEmpty {
                     Menu {
                         ForEach(presets) { preset in
@@ -411,17 +441,18 @@ struct ScratchpadView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "line.3.horizontal.decrease.circle")
-                            Text("Apply")
+                            Text("Apply Preset")
                         }
                         .font(.caption)
+                        .foregroundColor(theme.primary)
                     }
                 }
 
-                // Either "Using: <preset>" or "Save as preset"
                 if let name = presetName.wrappedValue, !name.isEmpty {
                     Text("(Using: \(name))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.caption2)
+                        .fontDesign(theme.fontDesign)
+                        .foregroundColor(theme.textSecondary)
                 } else if !trimmed.isEmpty {
                     Button {
                         beginSavingPreset(
@@ -435,17 +466,20 @@ struct ScratchpadView: View {
                             Text("Save as preset")
                         }
                         .font(.caption)
+                        .foregroundColor(theme.primary)
                     }
                 }
 
                 Spacer()
             }
 
+            // Text input - slightly smaller font than label
             DynamicGrowingTextEditor(
                 text: text,
                 placeholder: "Optional \(label.lowercased()) details",
                 minLines: 0,
-                maxLines: 5
+                maxLines: 5,
+                fontSize: 14
             )
             .onAppear {
                 updatePresetNameForCurrentText(
@@ -464,7 +498,7 @@ struct ScratchpadView: View {
         }
     }
 
-    // MARK: - Preset helpers (mirroring character prompt logic)
+    // MARK: - Preset Helpers
 
     private func updatePresetNameForCurrentText(
         kind: PromptSectionKind,
@@ -474,7 +508,6 @@ struct ScratchpadView: View {
         let presets = presetStore.presets(of: kind)
         let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // If text is empty, clear any preset info
         guard !trimmed.isEmpty else {
             if presetName.wrappedValue != nil {
                 presetName.wrappedValue = nil
@@ -482,20 +515,17 @@ struct ScratchpadView: View {
             return
         }
 
-        // If we already have a presetName and it still matches exactly, keep it
         if let currentName = presetName.wrappedValue,
            let currentPreset = presets.first(where: { $0.name == currentName }),
            currentPreset.text.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed {
             return
         }
 
-        // Otherwise, see if any preset text matches exactly
         if let match = presets.first(where: {
             $0.text.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed
         }) {
             presetName.wrappedValue = match.name
         } else if presetName.wrappedValue != nil {
-            // Text no longer matches any preset → clear the marker
             presetName.wrappedValue = nil
         }
     }
@@ -511,14 +541,43 @@ struct ScratchpadView: View {
         pendingPresetText = trimmed
         pendingPresetKind = kind
         pendingPresetLabel = label
-        pendingPresetNameInput = label   // default suggestion
+        pendingPresetNameInput = label
         isShowingPresetSaveAlert = true
     }
 
-    // MARK: - Save / load / attach helpers
+    // MARK: - Save / Load / Attach Helpers
+    
+    private var hasAnyContent: Bool {
+        !physicalDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !outfit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !pose.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !environment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !lighting.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !styleModifiers.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !technicalModifiers.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !negativePrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !additionalInfo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     private func saveCurrentScratch() {
+        // Check for empty scratch
+        if !hasAnyContent {
+            showEmptyWarning = true
+            return
+        }
+        
         let full = composedScratchPrompt
+        
+        // Check for duplicate
+        let isDuplicate = scratchpadSaved.contains { existing in
+            existing.text.trimmingCharacters(in: .whitespacesAndNewlines) == full.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        if isDuplicate {
+            showDuplicateWarning = true
+            return
+        }
+        
         let titleToUse = makeTitle(from: full)
 
         let saved = SavedPrompt(
@@ -601,7 +660,6 @@ struct ScratchpadView: View {
             negativePrompt = prompt.negativePrompt ?? ""
             additionalInfo = prompt.additionalInfo ?? ""
         } else {
-            // Old-style saved scratches: treat text as "Additional Information"
             physicalDescription = ""
             outfit = ""
             pose = ""
@@ -651,120 +709,5 @@ struct ScratchpadView: View {
         if trimmed.isEmpty { return "Untitled Scratch" }
         let prefix = trimmed.prefix(40)
         return String(prefix) + (trimmed.count > 40 ? "…" : "")
-    }
-}
-
-// MARK: - Bottom sheet: Saved scratches
-
-private struct SavedScratchSheetView: View {
-    @Binding var scratchpadSaved: [SavedPrompt]
-    let onSelect: (SavedPrompt) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationView {
-            List {
-                if scratchpadSaved.isEmpty {
-                    Text("No saved scratch prompts yet.")
-                        .foregroundColor(.secondary)
-                } else {
-                    ForEach(scratchpadSaved) { prompt in
-                        VStack(alignment: .leading) {
-                            Text(prompt.title)
-                                .font(.subheadline)
-                                .bold()
-                            Text(prompt.text)
-                                .font(.caption)
-                                .lineLimit(3)
-                                .foregroundColor(.secondary)
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onSelect(prompt)
-                            dismiss()
-                        }
-                    }
-                    .onDelete { indices in
-                        scratchpadSaved.remove(atOffsets: indices)
-                    }
-                }
-            }
-            .navigationTitle("Saved Scratch Prompts")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if !scratchpadSaved.isEmpty {
-                        EditButton()
-                    }
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Bottom sheet: Add to character
-
-private struct AddScratchToCharacterSheet: View {
-    let characters: [CharacterProfile]
-    @Binding var title: String
-    let onAdd: (CharacterProfile.ID, String) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Add to Character")
-                    .font(.headline)
-
-                TextField("Prompt title (required)", text: $title)
-                    .textFieldStyle(.roundedBorder)
-
-                if characters.isEmpty {
-                    Text("You don't have any characters yet.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                } else {
-                    List {
-                        ForEach(characters) { character in
-                            let disabled = title
-                                .trimmingCharacters(in: .whitespacesAndNewlines)
-                                .isEmpty
-                            Button {
-                                let trimmed = title
-                                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                                guard !trimmed.isEmpty else { return }
-                                onAdd(character.id, trimmed)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    Text(character.name.isEmpty ? "Untitled Character" : character.name)
-                                    Spacer()
-                                }
-                            }
-                            .disabled(disabled)
-                        }
-                    }
-                    .listStyle(.plain)
-                }
-
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("Add to Character")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-        }
     }
 }

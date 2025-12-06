@@ -6,15 +6,8 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		A0901DCD2EE3330000105E60 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0901DCC2EE3330000105E60 /* SafariView.swift */; };
-		A0901DCF2EE333EF00105E60 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0901DCE2EE333EF00105E60 /* ImagePicker.swift */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		A0901DBA2EE3196200105E60 /* PerchanceImageGenerator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PerchanceImageGenerator.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A0901DCC2EE3330000105E60 /* SafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
-		A0901DCE2EE333EF00105E60 /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -41,8 +34,6 @@
 			children = (
 				A0901DBC2EE3196200105E60 /* PerchanceImageGenerator */,
 				A0901DBB2EE3196200105E60 /* Products */,
-				A0901DCC2EE3330000105E60 /* SafariView.swift */,
-				A0901DCE2EE333EF00105E60 /* ImagePicker.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -128,8 +119,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A0901DCD2EE3330000105E60 /* SafariView.swift in Sources */,
-				A0901DCF2EE333EF00105E60 /* ImagePicker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

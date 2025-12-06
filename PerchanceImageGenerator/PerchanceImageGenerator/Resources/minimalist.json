@@ -1,0 +1,59 @@
+{
+    "id": "minimalist",
+    "name": "Minimalist",
+    "description": "Clean and simple with subtle elegance",
+    "colors": {
+        "primary": "#2A3A4A",
+        "primaryVariant": "#1A2A3A",
+        "secondary": "#6A7A8A",
+        "secondaryVariant": "#5A6A7A",
+        "background": "#FFFFFF",
+        "backgroundSecondary": "#F8F9FA",
+        "backgroundTertiary": "#F0F2F4",
+        "textPrimary": "#1A1A1A",
+        "textSecondary": "#6A6A6A",
+        "textAccent": "#2A3A4A",
+        "textOnPrimary": "#FFFFFF",
+        "border": "#E0E4E8",
+        "divider": "#E8ECEF",
+        "shadow": "#A0A8B0",
+        "success": "#28A060",
+        "warning": "#E8A020",
+        "error": "#D04040",
+        "tabBarBackground": "#F8F9FA",
+        "tabBarSelected": "#2A3A4A",
+        "tabBarUnselected": "#A0A8B0"
+    },
+    "typography": {
+        "fontFamily": "default",
+        "fontWeight": "regular",
+        "titleStyle": "none",
+        "letterSpacing": 0.0,
+        "lineHeightMultiplier": 1.2
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "light",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 8,
+        "paddingMedium": 14,
+        "paddingLarge": 22,
+        "cornerRadiusSmall": 6,
+        "cornerRadiusMedium": 10,
+        "cornerRadiusLarge": 14,
+        "itemSpacing": 10,
+        "sectionSpacing": 18
+    },
+    "effects": {
+        "useGradientBackground": false,
+        "gradientAngle": 180,
+        "shadowRadius": 4,
+        "shadowOpacity": 0.08,
+        "blurRadius": 0,
+        "gradientColors": [],
+        "buttonStyle": "outlined",
+        "cardStyle": "bordered"
+    }
+}

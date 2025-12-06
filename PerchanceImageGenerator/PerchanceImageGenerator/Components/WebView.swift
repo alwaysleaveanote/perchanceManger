@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 
+/// A WKWebView wrapper with JavaScript injection capabilities
 struct WebView: UIViewRepresentable {
     let url: URL
     @Binding var promptToInject: String?
@@ -130,7 +131,7 @@ struct WebView: UIViewRepresentable {
                     newLogEntry += "(no iframes found)\n"
                 } else {
                     newLogEntry += urls.joined(separator: "\n") + "\n"
-                    newLogEntry += "Copy one of these URLs and try loading it directly in your WebView if you want to control that frame’s DOM.\n"
+                    newLogEntry += "Copy one of these URLs and try loading it directly in your WebView if you want to control that frame's DOM.\n"
                 }
             } else {
                 newLogEntry += "Result: \(String(describing: result))\n"

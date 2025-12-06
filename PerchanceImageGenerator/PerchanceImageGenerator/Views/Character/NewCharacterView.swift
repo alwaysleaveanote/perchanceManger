@@ -1,8 +1,10 @@
 import SwiftUI
 import UIKit
 
+/// Sheet view for creating a new character
 struct NewCharacterView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var themeManager: ThemeManager
 
     @State private var name: String = ""
     @State private var bio: String = ""
@@ -11,9 +13,14 @@ struct NewCharacterView: View {
     let onCreate: (CharacterProfile) -> Void
 
     var body: some View {
+        let theme = themeManager.resolved
+        
         NavigationView {
             Form {
-                Section(header: Text("New Character")) {
+                Section(header: Text("New Character")
+                    .foregroundColor(theme.textSecondary)
+                    .fontDesign(theme.fontDesign)
+                ) {
                     DynamicGrowingTextEditor(
                         text: $name,
                         placeholder: "Name",
@@ -35,11 +42,14 @@ struct NewCharacterView: View {
                         maxLines: 10
                     )
                 }
+                .listRowBackground(theme.backgroundSecondary)
             }
+            .themedList()
             .dismissKeyboardOnDrag()
             .navigationTitle("New Character")
+            .navigationBarTitleDisplayMode(.inline)
+            .themedNavigationBar()
             .toolbar {
-                // Cancel button – this is the one that should close the sheet
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         KeyboardHelper.dismiss()

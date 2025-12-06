@@ -1,0 +1,59 @@
+{
+    "id": "lego",
+    "name": "Lego",
+    "description": "Playful primary colors with cheerful building-block energy",
+    "colors": {
+        "primary": "#E85A5A",
+        "primaryVariant": "#D84A4A",
+        "secondary": "#4AC8C0",
+        "secondaryVariant": "#3AB8B0",
+        "background": "#FFFDF5",
+        "backgroundSecondary": "#FFF8E8",
+        "backgroundTertiary": "#FFF0D8",
+        "textPrimary": "#2A2828",
+        "textSecondary": "#5A5858",
+        "textAccent": "#E85A5A",
+        "textOnPrimary": "#FFFFFF",
+        "border": "#F0D8A0",
+        "divider": "#F8E4B8",
+        "shadow": "#D8A060",
+        "success": "#48B858",
+        "warning": "#E8A830",
+        "error": "#D03030",
+        "tabBarBackground": "#FFF8E8",
+        "tabBarSelected": "#E85A5A",
+        "tabBarUnselected": "#A0A0A0"
+    },
+    "typography": {
+        "fontFamily": "rounded",
+        "fontWeight": "bold",
+        "titleStyle": "none",
+        "letterSpacing": 0.6,
+        "lineHeightMultiplier": 1.2
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "semibold",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 12,
+        "paddingMedium": 18,
+        "paddingLarge": 26,
+        "cornerRadiusSmall": 14,
+        "cornerRadiusMedium": 20,
+        "cornerRadiusLarge": 28,
+        "itemSpacing": 12,
+        "sectionSpacing": 20
+    },
+    "effects": {
+        "useGradientBackground": true,
+        "gradientColors": ["#FFFDF5", "#FFFAED", "#FFF6E4"],
+        "gradientAngle": 120,
+        "shadowRadius": 10,
+        "shadowOpacity": 0.12,
+        "blurRadius": 0,
+        "buttonStyle": "filled",
+        "cardStyle": "elevated"
+    }
+}

@@ -1,0 +1,97 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="100%" style="stop-color:#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#F0F0FF"/>
+    </linearGradient>
+    <linearGradient id="sparkleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700"/>
+      <stop offset="100%" style="stop-color:#FFA500"/>
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A5B4FC"/>
+      <stop offset="100%" style="stop-color:#818CF8"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bgGradient)"/>
+  
+  <!-- Subtle radial glow in center -->
+  <circle cx="512" cy="512" r="380" fill="white" fill-opacity="0.06"/>
+  <circle cx="512" cy="512" r="280" fill="white" fill-opacity="0.04"/>
+  
+  <!-- Main icon: Abstract artistic figure with flowing lines -->
+  <g transform="translate(512, 512)">
+    <!-- Abstract head - geometric/artistic circle with inner design -->
+    <circle cx="0" cy="-180" r="150" fill="url(#iconGradient)"/>
+    
+    <!-- Artistic face - abstract, modern lines instead of literal features -->
+    <path d="M-60 -200 Q-30 -220 0 -200 Q30 -180 60 -200" 
+          stroke="url(#accentGradient)" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M-40 -160 Q0 -130 40 -160" 
+          stroke="url(#accentGradient)" stroke-width="6" fill="none" stroke-linecap="round"/>
+    
+    <!-- Body - large flowing abstract shape -->
+    <path d="M-130 -20 
+             C-150 -80 -100 -60 0 -60 
+             C100 -60 150 -80 130 -20 
+             L120 220 
+             C110 280 60 300 0 300 
+             C-60 300 -110 280 -120 220 Z" 
+          fill="url(#iconGradient)"/>
+    
+    <!-- Artistic flowing lines through the figure -->
+    <path d="M-100 60 Q-20 20 40 80 Q100 140 80 200" 
+          stroke="url(#accentGradient)" stroke-width="10" fill="none" stroke-linecap="round" stroke-opacity="0.7"/>
+    <path d="M100 40 Q20 80 -30 140 Q-80 200 -60 260" 
+          stroke="url(#accentGradient)" stroke-width="8" fill="none" stroke-linecap="round" stroke-opacity="0.5"/>
+  </g>
+  
+  <!-- Large AI Sparkle - top right, prominent -->
+  <g transform="translate(740, 240)" filter="url(#glow)">
+    <path d="M0 -70 L12 -12 L70 0 L12 12 L0 70 L-12 12 L-70 0 L-12 -12 Z" fill="url(#sparkleGradient)"/>
+  </g>
+  
+  <!-- Medium sparkle - top left -->
+  <g transform="translate(280, 300)" filter="url(#glow)">
+    <path d="M0 -50 L8 -8 L50 0 L8 8 L0 50 L-8 8 L-50 0 L-8 -8 Z" fill="url(#sparkleGradient)" fill-opacity="0.95"/>
+  </g>
+  
+  <!-- Small accent sparkles scattered around -->
+  <g transform="translate(800, 450)" filter="url(#softGlow)">
+    <path d="M0 -30 L5 -5 L30 0 L5 5 L0 30 L-5 5 L-30 0 L-5 -5 Z" fill="#FFD700" fill-opacity="0.8"/>
+  </g>
+  <g transform="translate(220, 500)" filter="url(#softGlow)">
+    <path d="M0 -25 L4 -4 L25 0 L4 4 L0 25 L-4 4 L-25 0 L-4 -4 Z" fill="#FFD700" fill-opacity="0.7"/>
+  </g>
+  <g transform="translate(760, 620)">
+    <path d="M0 -20 L3 -3 L20 0 L3 3 L0 20 L-3 3 L-20 0 L-3 -3 Z" fill="#FFD700" fill-opacity="0.6"/>
+  </g>
+  <g transform="translate(260, 680)">
+    <path d="M0 -18 L3 -3 L18 0 L3 3 L0 18 L-3 3 L-18 0 L-3 -3 Z" fill="#FFD700" fill-opacity="0.5"/>
+  </g>
+  
+  <!-- Subtle connecting particles -->
+  <circle cx="680" cy="340" r="6" fill="#FFD700" fill-opacity="0.4"/>
+  <circle cx="340" cy="400" r="5" fill="#FFD700" fill-opacity="0.35"/>
+  <circle cx="720" cy="520" r="4" fill="#FFD700" fill-opacity="0.3"/>
+</svg>

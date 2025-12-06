@@ -1,0 +1,59 @@
+{
+    "id": "vaporwave",
+    "name": "Vaporwave",
+    "description": "Retro 80s aesthetic with sunset pink and teal",
+    "colors": {
+        "primary": "#FF70B0",
+        "primaryVariant": "#EF60A0",
+        "secondary": "#40D8D8",
+        "secondaryVariant": "#30C8C8",
+        "background": "#1A1028",
+        "backgroundSecondary": "#241838",
+        "backgroundTertiary": "#2E2048",
+        "textPrimary": "#FFFFFF",
+        "textSecondary": "#C0A8D0",
+        "textAccent": "#FF70B0",
+        "textOnPrimary": "#1A1028",
+        "border": "#5A4070",
+        "divider": "#4A3060",
+        "shadow": "#100820",
+        "success": "#40E8A0",
+        "warning": "#F8D040",
+        "error": "#FF4040",
+        "tabBarBackground": "#241838",
+        "tabBarSelected": "#FF70B0",
+        "tabBarUnselected": "#9080A8"
+    },
+    "typography": {
+        "fontFamily": "rounded",
+        "fontWeight": "bold",
+        "titleStyle": "none",
+        "letterSpacing": 1.2,
+        "lineHeightMultiplier": 1.15
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "semibold",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 10,
+        "paddingMedium": 16,
+        "paddingLarge": 24,
+        "cornerRadiusSmall": 8,
+        "cornerRadiusMedium": 14,
+        "cornerRadiusLarge": 20,
+        "itemSpacing": 10,
+        "sectionSpacing": 20
+    },
+    "effects": {
+        "useGradientBackground": false,
+        "gradientAngle": 180,
+        "shadowRadius": 14,
+        "shadowOpacity": 0.4,
+        "blurRadius": 0,
+        "gradientColors": [],
+        "buttonStyle": "filled",
+        "cardStyle": "elevated"
+    }
+}

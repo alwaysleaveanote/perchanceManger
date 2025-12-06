@@ -1,0 +1,59 @@
+{
+    "id": "druidic",
+    "name": "Ancient Grove",
+    "description": "Deep forest wisdom with moss green and bark brown",
+    "colors": {
+        "primary": "#3D6B4F",
+        "primaryVariant": "#2D5B3F",
+        "secondary": "#8B6B4A",
+        "secondaryVariant": "#7B5B3A",
+        "background": "#F5F8F4",
+        "backgroundSecondary": "#EBF0E8",
+        "backgroundTertiary": "#E0E8DC",
+        "textPrimary": "#1E2E22",
+        "textSecondary": "#4A5A4E",
+        "textAccent": "#3D6B4F",
+        "textOnPrimary": "#FFFFFF",
+        "border": "#C4D4C0",
+        "divider": "#D0DCC8",
+        "shadow": "#3D5040",
+        "success": "#4A8A5A",
+        "warning": "#C9A050",
+        "error": "#9A4A4A",
+        "tabBarBackground": "#EBF0E8",
+        "tabBarSelected": "#3D6B4F",
+        "tabBarUnselected": "#7A8A7A"
+    },
+    "typography": {
+        "fontFamily": "serif",
+        "fontWeight": "regular",
+        "titleStyle": "none",
+        "letterSpacing": 0.3,
+        "lineHeightMultiplier": 1.2
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "regular",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 10,
+        "paddingMedium": 16,
+        "paddingLarge": 24,
+        "cornerRadiusSmall": 10,
+        "cornerRadiusMedium": 16,
+        "cornerRadiusLarge": 22,
+        "itemSpacing": 10,
+        "sectionSpacing": 20
+    },
+    "effects": {
+        "useGradientBackground": true,
+        "gradientColors": ["#F5F8F4", "#EFF4EC", "#E8F0E4"],
+        "gradientAngle": 135,
+        "shadowRadius": 8,
+        "shadowOpacity": 0.12,
+        "blurRadius": 0,
+        "buttonStyle": "soft",
+        "cardStyle": "elevated"
+    }
+}

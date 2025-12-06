@@ -1,0 +1,59 @@
+{
+    "id": "cottagecore",
+    "name": "Cottagecore",
+    "description": "Rustic warmth with honey and wildflower tones",
+    "colors": {
+        "primary": "#C8956A",
+        "primaryVariant": "#B8855A",
+        "secondary": "#7A9A78",
+        "secondaryVariant": "#6A8A68",
+        "background": "#FBF7F2",
+        "backgroundSecondary": "#F5EFE6",
+        "backgroundTertiary": "#EDE5DA",
+        "textPrimary": "#3A3028",
+        "textSecondary": "#6A5A4A",
+        "textAccent": "#C8956A",
+        "textOnPrimary": "#FFFFFF",
+        "border": "#D8CCC0",
+        "divider": "#E4D8C8",
+        "shadow": "#A08060",
+        "success": "#4A8A48",
+        "warning": "#D4A040",
+        "error": "#C04040",
+        "tabBarBackground": "#F5EFE6",
+        "tabBarSelected": "#C8956A",
+        "tabBarUnselected": "#9A8A7A"
+    },
+    "typography": {
+        "fontFamily": "serif",
+        "fontWeight": "regular",
+        "titleStyle": "none",
+        "letterSpacing": 0.3,
+        "lineHeightMultiplier": 1.25
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "light",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 10,
+        "paddingMedium": 16,
+        "paddingLarge": 24,
+        "cornerRadiusSmall": 10,
+        "cornerRadiusMedium": 16,
+        "cornerRadiusLarge": 22,
+        "itemSpacing": 10,
+        "sectionSpacing": 20
+    },
+    "effects": {
+        "useGradientBackground": true,
+        "gradientColors": ["#FBF7F2", "#F8F2EA", "#F4EDE2"],
+        "gradientAngle": 170,
+        "shadowRadius": 8,
+        "shadowOpacity": 0.1,
+        "blurRadius": 0,
+        "buttonStyle": "soft",
+        "cardStyle": "elevated"
+    }
+}

@@ -1,6 +1,8 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
+/// A PHPicker-based image picker that supports multiple selection
 struct ImagePicker: UIViewControllerRepresentable {
     var onImagesPicked: ([UIImage]) -> Void
 

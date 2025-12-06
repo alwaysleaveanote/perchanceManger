@@ -1,0 +1,59 @@
+{
+    "id": "paladin",
+    "name": "Holy Paladin",
+    "description": "Divine radiance with warm gold and noble ivory",
+    "colors": {
+        "primary": "#B8860B",
+        "primaryVariant": "#A67608",
+        "secondary": "#5C6B7A",
+        "secondaryVariant": "#4C5B6A",
+        "background": "#FDFBF5",
+        "backgroundSecondary": "#F7F3E8",
+        "backgroundTertiary": "#F0EBDC",
+        "textPrimary": "#2A2520",
+        "textSecondary": "#5A5248",
+        "textAccent": "#B8860B",
+        "textOnPrimary": "#FDFBF5",
+        "border": "#D8D0BC",
+        "divider": "#E4DCC8",
+        "shadow": "#8B7355",
+        "success": "#5A7A4A",
+        "warning": "#C9A227",
+        "error": "#8B3A3A",
+        "tabBarBackground": "#F7F3E8",
+        "tabBarSelected": "#B8860B",
+        "tabBarUnselected": "#8A8070"
+    },
+    "typography": {
+        "fontFamily": "serif",
+        "fontWeight": "semibold",
+        "titleStyle": "none",
+        "letterSpacing": 0.8,
+        "lineHeightMultiplier": 1.15
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "medium",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 10,
+        "paddingMedium": 14,
+        "paddingLarge": 20,
+        "cornerRadiusSmall": 6,
+        "cornerRadiusMedium": 10,
+        "cornerRadiusLarge": 14,
+        "itemSpacing": 10,
+        "sectionSpacing": 18
+    },
+    "effects": {
+        "useGradientBackground": true,
+        "gradientColors": ["#FDFBF5", "#FAF7EE", "#F6F2E6"],
+        "gradientAngle": 180,
+        "shadowRadius": 8,
+        "shadowOpacity": 0.18,
+        "blurRadius": 0,
+        "buttonStyle": "filled",
+        "cardStyle": "bordered"
+    }
+}

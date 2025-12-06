@@ -1,0 +1,59 @@
+{
+    "id": "fae",
+    "name": "Enchanted Fae",
+    "description": "Mystical fairy realm with ethereal lavender and soft moss greens",
+    "colors": {
+        "primary": "#7C5CBF",
+        "primaryVariant": "#6B4CAF",
+        "secondary": "#5BA88F",
+        "secondaryVariant": "#4A9880",
+        "background": "#F8F5FC",
+        "backgroundSecondary": "#F0EBF8",
+        "backgroundTertiary": "#E8E0F4",
+        "textPrimary": "#3D2E5A",
+        "textSecondary": "#6B5A8A",
+        "textAccent": "#7C5CBF",
+        "textOnPrimary": "#FFFFFF",
+        "border": "#D4C8E8",
+        "divider": "#E0D6F0",
+        "shadow": "#7C5CBF",
+        "success": "#3A9A6A",
+        "warning": "#D4A040",
+        "error": "#D04050",
+        "tabBarBackground": "#F0EBF8",
+        "tabBarSelected": "#7C5CBF",
+        "tabBarUnselected": "#9A8AB0"
+    },
+    "typography": {
+        "fontFamily": "rounded",
+        "fontWeight": "medium",
+        "titleStyle": "none",
+        "letterSpacing": 0.3,
+        "lineHeightMultiplier": 1.2
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "light",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 10,
+        "paddingMedium": 16,
+        "paddingLarge": 24,
+        "cornerRadiusSmall": 14,
+        "cornerRadiusMedium": 20,
+        "cornerRadiusLarge": 28,
+        "itemSpacing": 10,
+        "sectionSpacing": 20
+    },
+    "effects": {
+        "useGradientBackground": true,
+        "gradientColors": ["#F8F5FC", "#F2EDF8", "#EDE6F5"],
+        "gradientAngle": 160,
+        "shadowRadius": 10,
+        "shadowOpacity": 0.12,
+        "blurRadius": 0,
+        "buttonStyle": "soft",
+        "cardStyle": "elevated"
+    }
+}

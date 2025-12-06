@@ -1,0 +1,59 @@
+{
+    "id": "ocean",
+    "name": "Deep Ocean",
+    "description": "Calming depths with cerulean blue and seafoam",
+    "colors": {
+        "primary": "#0078A8",
+        "primaryVariant": "#006898",
+        "secondary": "#40B8C8",
+        "secondaryVariant": "#30A8B8",
+        "background": "#F5FAFC",
+        "backgroundSecondary": "#EBF4F8",
+        "backgroundTertiary": "#E0EEF4",
+        "textPrimary": "#0A2A3A",
+        "textSecondary": "#3A5A6A",
+        "textAccent": "#0078A8",
+        "textOnPrimary": "#FFFFFF",
+        "border": "#B8D8E8",
+        "divider": "#C8E4F0",
+        "shadow": "#0068A0",
+        "success": "#20A878",
+        "warning": "#E8A840",
+        "error": "#D85050",
+        "tabBarBackground": "#EBF4F8",
+        "tabBarSelected": "#0078A8",
+        "tabBarUnselected": "#6A8A9A"
+    },
+    "typography": {
+        "fontFamily": "rounded",
+        "fontWeight": "medium",
+        "titleStyle": "none",
+        "letterSpacing": 0.2,
+        "lineHeightMultiplier": 1.2
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "regular",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 10,
+        "paddingMedium": 16,
+        "paddingLarge": 24,
+        "cornerRadiusSmall": 12,
+        "cornerRadiusMedium": 18,
+        "cornerRadiusLarge": 26,
+        "itemSpacing": 10,
+        "sectionSpacing": 20
+    },
+    "effects": {
+        "useGradientBackground": true,
+        "gradientColors": ["#F5FAFC", "#EEF6FA", "#E6F2F8"],
+        "gradientAngle": 180,
+        "shadowRadius": 10,
+        "shadowOpacity": 0.12,
+        "blurRadius": 0,
+        "buttonStyle": "filled",
+        "cardStyle": "elevated"
+    }
+}

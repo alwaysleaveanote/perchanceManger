@@ -1,6 +1,7 @@
 import SwiftUI
 import SafariServices
 
+/// A UIViewControllerRepresentable wrapper for SFSafariViewController
 struct SafariView: UIViewControllerRepresentable {
     let url: URL
 

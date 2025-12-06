@@ -1,0 +1,59 @@
+{
+    "id": "darkfantasy",
+    "name": "Dark Fantasy",
+    "description": "Gothic elegance with deep crimson and midnight",
+    "colors": {
+        "primary": "#A03030",
+        "primaryVariant": "#902020",
+        "secondary": "#505878",
+        "secondaryVariant": "#404868",
+        "background": "#18181C",
+        "backgroundSecondary": "#202024",
+        "backgroundTertiary": "#28282E",
+        "textPrimary": "#E8E4E0",
+        "textSecondary": "#9A9490",
+        "textAccent": "#A03030",
+        "textOnPrimary": "#FFFFFF",
+        "border": "#38383E",
+        "divider": "#303036",
+        "shadow": "#000000",
+        "success": "#3A7A4A",
+        "warning": "#B89030",
+        "error": "#A03030",
+        "tabBarBackground": "#202024",
+        "tabBarSelected": "#A03030",
+        "tabBarUnselected": "#6A6A70"
+    },
+    "typography": {
+        "fontFamily": "serif",
+        "fontWeight": "regular",
+        "titleStyle": "none",
+        "letterSpacing": 0.6,
+        "lineHeightMultiplier": 1.2
+    },
+    "iconography": {
+        "style": "sf-symbols",
+        "weight": "regular",
+        "icons": {}
+    },
+    "spacing": {
+        "paddingSmall": 10,
+        "paddingMedium": 16,
+        "paddingLarge": 24,
+        "cornerRadiusSmall": 4,
+        "cornerRadiusMedium": 8,
+        "cornerRadiusLarge": 12,
+        "itemSpacing": 10,
+        "sectionSpacing": 20
+    },
+    "effects": {
+        "useGradientBackground": false,
+        "gradientAngle": 180,
+        "shadowRadius": 12,
+        "shadowOpacity": 0.5,
+        "blurRadius": 0,
+        "gradientColors": [],
+        "buttonStyle": "outlined",
+        "cardStyle": "bordered"
+    }
+}
