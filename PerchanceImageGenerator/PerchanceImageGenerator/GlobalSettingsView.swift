@@ -528,6 +528,7 @@ struct GlobalSettingsView: View {
 
     private func label(for kind: PromptSectionKind) -> String {
         switch kind {
+        case .physicalDescription: return "Physical Description"
         case .outfit: return "Outfit"
         case .pose: return "Pose"
         case .environment: return "Environment"
@@ -540,6 +541,7 @@ struct GlobalSettingsView: View {
 
     private func defaultKey(for kind: PromptSectionKind) -> GlobalDefaultKey {
         switch kind {
+        case .physicalDescription: return .physicalDescription
         case .outfit: return .outfit
         case .pose: return .pose
         case .environment: return .environment

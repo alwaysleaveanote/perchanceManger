@@ -24,6 +24,7 @@ struct SavedPrompt: Identifiable, Codable, Equatable {
     var title: String
     var text: String
 
+    var physicalDescription: String?
     var outfit: String?
     var pose: String?
     var environment: String?
@@ -33,6 +34,7 @@ struct SavedPrompt: Identifiable, Codable, Equatable {
     var negativePrompt: String?
     var additionalInfo: String?      // ⬅️ NEW
 
+    var physicalDescriptionPresetName: String?
     var outfitPresetName: String?
     var posePresetName: String?
     var environmentPresetName: String?
@@ -46,6 +48,7 @@ struct SavedPrompt: Identifiable, Codable, Equatable {
     init(
         title: String,
         text: String,
+        physicalDescription: String? = nil,
         outfit: String? = nil,
         pose: String? = nil,
         environment: String? = nil,
@@ -54,6 +57,7 @@ struct SavedPrompt: Identifiable, Codable, Equatable {
         technicalModifiers: String? = nil,
         negativePrompt: String? = nil,
         additionalInfo: String? = nil,          // ⬅️ NEW
+        physicalDescriptionPresetName: String? = nil,
         outfitPresetName: String? = nil,
         posePresetName: String? = nil,
         environmentPresetName: String? = nil,
@@ -65,6 +69,7 @@ struct SavedPrompt: Identifiable, Codable, Equatable {
     ) {
         self.title = title
         self.text = text
+        self.physicalDescription = physicalDescription
         self.outfit = outfit
         self.pose = pose
         self.environment = environment
@@ -74,6 +79,7 @@ struct SavedPrompt: Identifiable, Codable, Equatable {
         self.negativePrompt = negativePrompt
         self.additionalInfo = additionalInfo      // ⬅️ NEW
 
+        self.physicalDescriptionPresetName = physicalDescriptionPresetName
         self.outfitPresetName = outfitPresetName
         self.posePresetName = posePresetName
         self.environmentPresetName = environmentPresetName
@@ -102,6 +108,7 @@ struct CharacterProfile: Identifiable, Codable, Equatable {
 // MARK: - Prompt composition helpers & enums
 
 enum PromptSectionKind: String, CaseIterable, Hashable, Codable {
+    case physicalDescription
     case outfit
     case pose
     case environment
@@ -112,6 +119,7 @@ enum PromptSectionKind: String, CaseIterable, Hashable, Codable {
 }
 
 enum GlobalDefaultKey: String, CaseIterable, Hashable, Codable {
+    case physicalDescription
     case outfit
     case pose
     case environment
@@ -226,10 +234,12 @@ enum PromptComposer {
         if !character.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             output.append("Name:\n\(character.name)")
         }
-
-        // Bio
-        if !character.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            output.append("Bio:\n\(character.bio)")
+        
+        // physicalDescription
+        let physicalDescription = prompt.physicalDescription?.nonEmpty
+            ?? globalDefaults[.physicalDescription]?.nonEmpty
+        if let block = section("Physical Description", physicalDescription) {
+            output.append(block)
         }
 
         // Outfit

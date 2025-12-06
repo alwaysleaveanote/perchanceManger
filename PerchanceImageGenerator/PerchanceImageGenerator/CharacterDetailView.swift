@@ -131,6 +131,7 @@ struct CharacterDetailView: View {
                 let newPrompt = SavedPrompt(
                     title: "New Prompt",
                     text: "",
+                    physicalDescription: presetStore.globalDefaults[.physicalDescription],
                     outfit: presetStore.globalDefaults[.outfit],
                     pose: presetStore.globalDefaults[.pose],
                     environment: presetStore.globalDefaults[.environment],
@@ -613,6 +614,13 @@ struct PromptEditorView: View {
             // Decomposed sections
             VStack(alignment: .leading, spacing: 12) {
                 sectionRow(
+                    label: "Physical Description",
+                    kind: .physicalDescription,
+                    text: physicalDescriptionBinding,
+                    presetName: physicalDescriptionPresetNameBinding
+                )
+
+                sectionRow(
                     label: "Outfit",
                     kind: .outfit,
                     text: outfitBinding,
@@ -779,6 +787,14 @@ struct PromptEditorView: View {
             set: { promptBinding.wrappedValue.text = $0 }
         )
     }
+    
+    private var physicalDescriptionBinding: Binding<String> {
+        Binding(
+            get: { promptBinding.wrappedValue.physicalDescription ?? "" },
+            set: { promptBinding.wrappedValue.physicalDescription = $0 }
+        )
+    }
+
 
     private var outfitBinding: Binding<String> {
         Binding(
@@ -833,6 +849,13 @@ struct PromptEditorView: View {
         Binding(
             get: { promptBinding.wrappedValue.additionalInfo ?? "" },
             set: { promptBinding.wrappedValue.additionalInfo = $0 }
+        )
+    }
+    
+    private var physicalDescriptionPresetNameBinding: Binding<String?> {
+        Binding(
+            get: { promptBinding.wrappedValue.physicalDescriptionPresetName },
+            set: { promptBinding.wrappedValue.physicalDescriptionPresetName = $0 }
         )
     }
 
