@@ -8,6 +8,7 @@ struct CharacterSettingsView: View {
     @Binding var character: CharacterProfile
 
     /// Local working copy so edits don't constantly mutate the source driving navigation.
+    /// Local working copy for generator and defaults (not theme)
     @State private var workingCharacter: CharacterProfile
 
     @Environment(\.dismiss) private var dismiss
@@ -16,6 +17,9 @@ struct CharacterSettingsView: View {
     @State private var useCharacterGenerator: Bool = false
     @State private var generatorSelection: String = ""
     @State private var customGeneratorName: String = ""
+    
+    // Track the selected theme ID separately to avoid navigation issues
+    @State private var selectedThemeId: String?
 
     // Character defaults section picker
     @State private var selectedDefaultsSection: PromptSectionKind = .physicalDescription
@@ -23,10 +27,27 @@ struct CharacterSettingsView: View {
     init(character: Binding<CharacterProfile>) {
         self._character = character
         self._workingCharacter = State(initialValue: character.wrappedValue)
+        self._selectedThemeId = State(initialValue: character.wrappedValue.characterThemeId)
+    }
+    
+    /// Computes the preview theme locally without affecting global themeManager.resolved
+    /// This prevents re-renders of parent views when selecting a theme
+    private var previewTheme: ResolvedTheme {
+        if let themeId = selectedThemeId,
+           let theme = themeManager.availableThemes.first(where: { $0.id == themeId }) {
+            return ResolvedTheme(source: theme)
+        }
+        // Fall back to global theme
+        if let globalTheme = themeManager.availableThemes.first(where: { $0.id == themeManager.globalThemeId }) {
+            return ResolvedTheme(source: globalTheme)
+        }
+        return themeManager.resolved
     }
 
     var body: some View {
-        let theme = themeManager.resolved
+        // Use local preview theme instead of themeManager.resolved
+        // This prevents re-renders when selecting a theme
+        let theme = previewTheme
         
         ZStack {
             theme.background
@@ -41,7 +62,6 @@ struct CharacterSettingsView: View {
         }
         .navigationTitle("Character Settings")
         .navigationBarTitleDisplayMode(.inline)
-        .themedNavigationBar()
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Done") {
@@ -60,33 +80,40 @@ struct CharacterSettingsView: View {
                 }
             }
         }
+        .toolbarColorScheme(isLightTheme(previewTheme) ? .light : .dark, for: .navigationBar)
+        .toolbarBackground(theme.background, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .tint(theme.primary)
         .onAppear {
-            print("[CharacterSettingsView] ========== onAppear ==========")
-            print("[CharacterSettingsView] character.id = \(character.id)")
-            print("[CharacterSettingsView] character.name = '\(character.name)'")
-            print("[CharacterSettingsView] workingCharacter.id = \(workingCharacter.id)")
-            print("[CharacterSettingsView] character.characterThemeId = \(character.characterThemeId ?? "nil")")
+            Logger.debug("CharacterSettingsView appeared for: \(character.name)", category: .character)
             configureInitialGeneratorState()
-            // Apply character theme when entering settings
-            themeManager.setCharacterTheme(character.characterThemeId)
-            print("[CharacterSettingsView] Theme applied, onAppear complete")
         }
         .onDisappear {
-            print("[CharacterSettingsView] ========== onDisappear ==========")
-            print("[CharacterSettingsView] Saving workingCharacter.id = \(workingCharacter.id)")
-            print("[CharacterSettingsView] workingCharacter.name = '\(workingCharacter.name)'")
-            character = workingCharacter
-            print("[CharacterSettingsView] Character saved, onDisappear complete")
+            Logger.debug("CharacterSettingsView disappearing, saving changes", category: .character)
+            // Save ALL changes including theme on dismiss
+            character.characterThemeId = selectedThemeId
+            character.characterDefaults = workingCharacter.characterDefaults
+            character.characterDefaultPerchanceGenerator = workingCharacter.characterDefaultPerchanceGenerator
         }
-        .onChange(of: workingCharacter.characterThemeId) { oldValue, newValue in
-            print("[CharacterSettingsView] workingCharacter.characterThemeId changed: \(oldValue ?? "nil") -> \(newValue ?? "nil")")
-        }
+        // Theme preview updates automatically via previewTheme computed property
+    }
+    
+    /// Determines if a theme has a light background
+    private func isLightTheme(_ theme: ResolvedTheme) -> Bool {
+        let hex = theme.source.colors.background.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let r = Double((int >> 16) & 0xFF) / 255.0
+        let g = Double((int >> 8) & 0xFF) / 255.0
+        let b = Double(int & 0xFF) / 255.0
+        let luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        return luminance > 0.5
     }
 
     // MARK: - Generator Section
 
     private var generatorSection: some View {
-        let theme = themeManager.resolved
+        let theme = previewTheme
         
         return Section(header: Text("Perchance Generator")
             .foregroundColor(theme.textSecondary)
@@ -158,7 +185,7 @@ struct CharacterSettingsView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(theme.textPrimary)
 
-                    TextField("Enter generator name (slug, e.g. furry-ai)", text: $customGeneratorName)
+                    TextField("Enter generator name (slug, e.g. ai-artgen)", text: $customGeneratorName)
                         .textFieldStyle(.roundedBorder)
                         .autocapitalization(.none)
                         .textInputAutocapitalization(.never)
@@ -228,7 +255,7 @@ struct CharacterSettingsView: View {
     // MARK: - Character Defaults Section
 
     private var defaultsSection: some View {
-        let theme = themeManager.resolved
+        let theme = previewTheme
         
         return Section(header: Text("Character Defaults (Overrides Global)")
             .foregroundColor(theme.textSecondary)
@@ -248,7 +275,7 @@ struct CharacterSettingsView: View {
     }
 
     private var defaultsSectionPicker: some View {
-        let theme = themeManager.resolved
+        let theme = previewTheme
         
         return VStack(alignment: .leading, spacing: 6) {
             Text("Section")
@@ -284,7 +311,7 @@ struct CharacterSettingsView: View {
     }
 
     private var characterDefaultEditor: some View {
-        let theme = themeManager.resolved
+        let theme = previewTheme
         let key = selectedDefaultsSection.defaultKey
         let charText = (workingCharacter.characterDefaults[key] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let globalText = (presetStore.globalDefaults[key] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -374,7 +401,7 @@ struct CharacterSettingsView: View {
     // MARK: - Theme Section
 
     private var themeSection: some View {
-        let theme = themeManager.resolved
+        let theme = previewTheme
         
         return Section(header: Text("Character Theme")
             .foregroundColor(theme.textSecondary)
@@ -388,13 +415,11 @@ struct CharacterSettingsView: View {
 
                 ThemePicker(
                     title: "Character Theme",
-                    selectedThemeId: workingCharacter.characterThemeId,
+                    selectedThemeId: selectedThemeId,
                     showInheritOption: true,
                     onSelect: { themeId in
-                        workingCharacter.characterThemeId = themeId
-                        // Also update the active character theme for immediate visual feedback
-                        themeManager.setCharacterTheme(themeId)
-                        print("[CharacterSettingsView] theme set to '\(themeId ?? "inherit global")'")
+                        // Update local state only - don't touch workingCharacter here
+                        selectedThemeId = themeId
                     }
                 )
             }

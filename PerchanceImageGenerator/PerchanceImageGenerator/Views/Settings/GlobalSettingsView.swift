@@ -7,10 +7,10 @@ struct GlobalSettingsView: View {
     @State private var selectedSection: PromptSectionKind = .physicalDescription
     @State private var customGeneratorName: String = ""
 
-    // Collapse state for sections
-    @State private var isThemeExpanded: Bool = false
-    @State private var isGeneratorExpanded: Bool = false
-    @State private var isGlobalDefaultsExpanded: Bool = false
+    // Collapse state for sections - use @AppStorage to persist across theme changes
+    @AppStorage("globalSettings_isThemeExpanded") private var isThemeExpanded: Bool = false
+    @AppStorage("globalSettings_isGeneratorExpanded") private var isGeneratorExpanded: Bool = false
+    @AppStorage("globalSettings_isGlobalDefaultsExpanded") private var isGlobalDefaultsExpanded: Bool = false
 
     // Preset editor state
     @State private var selectedPresetId: UUID? = nil
@@ -32,6 +32,7 @@ struct GlobalSettingsView: View {
 
     var body: some View {
         let theme = themeManager.resolved
+        let globalTheme = themeManager.availableThemes.first(where: { $0.id == themeManager.globalThemeId }) ?? themeManager.currentTheme
         
         NavigationView {
             ScrollView {
@@ -49,7 +50,10 @@ struct GlobalSettingsView: View {
             .dismissKeyboardOnDrag()
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .themedNavigationBar()
+            .toolbarColorScheme(isLightTheme(globalTheme) ? .light : .dark, for: .navigationBar)
+            .toolbarBackground(theme.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .tint(theme.primary)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -63,8 +67,16 @@ struct GlobalSettingsView: View {
                 }
             }
         }
-        .onChange(of: selectedSection) { _ in
+        .onChange(of: selectedSection) { _, _ in
             startNewPreset()
+        }
+        .onChange(of: themeManager.globalThemeId) { oldValue, newValue in
+            print("[GlobalSettingsView] globalThemeId changed: \(oldValue) -> \(newValue)")
+            // Force navigation bar appearance update via UIKit
+            updateNavigationBarAppearance()
+        }
+        .onAppear {
+            updateNavigationBarAppearance()
         }
         .alert("Save as Preset", isPresented: $isShowingSavePresetAlert) {
             TextField("Preset name", text: $savePresetName)
@@ -643,6 +655,79 @@ struct GlobalSettingsView: View {
             presetStore.presets.remove(at: index)
             if selectedPresetId == preset.id {
                 startNewPreset()
+            }
+        }
+    }
+    
+    /// Determines if a theme has a light background
+    private func isLightTheme(_ theme: AppTheme) -> Bool {
+        let hex = theme.colors.background.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let r = Double((int >> 16) & 0xFF) / 255.0
+        let g = Double((int >> 8) & 0xFF) / 255.0
+        let b = Double(int & 0xFF) / 255.0
+        let luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        return luminance > 0.5
+    }
+    
+    /// Updates the navigation bar appearance via UIKit to ensure title is visible
+    private func updateNavigationBarAppearance() {
+        let globalTheme = themeManager.availableThemes.first(where: { $0.id == themeManager.globalThemeId }) ?? themeManager.currentTheme
+        let theme = ResolvedTheme(source: globalTheme)
+        
+        print("[GlobalSettingsView] updateNavigationBarAppearance - theme: \(globalTheme.id)")
+        
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(theme.background)
+        
+        // Get the appropriate font for the theme
+        let titleFont: UIFont
+        switch globalTheme.typography.fontFamily {
+        case "serif":
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.serif)!, size: 18)
+        case "rounded":
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.rounded)!, size: 18)
+        case "monospaced":
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.monospaced)!, size: 18)
+        default:
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.default)!, size: 18)
+        }
+        
+        // Title text attributes
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor(theme.primary),
+            .font: titleFont
+        ]
+        appearance.largeTitleTextAttributes = [
+            .foregroundColor: UIColor(theme.primary),
+            .font: UIFont(descriptor: titleFont.fontDescriptor, size: 34)
+        ]
+        
+        // Button appearance
+        let buttonAppearance = UIBarButtonItemAppearance()
+        buttonAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor(theme.primary)
+        ]
+        appearance.buttonAppearance = buttonAppearance
+        appearance.doneButtonAppearance = buttonAppearance
+        
+        // Apply globally
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        
+        // Force existing navigation bars to update immediately
+        DispatchQueue.main.async {
+            for window in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).flatMap({ $0.windows }) {
+                for navBar in window.subviews(ofType: UINavigationBar.self) {
+                    navBar.standardAppearance = appearance
+                    navBar.compactAppearance = appearance
+                    navBar.scrollEdgeAppearance = appearance
+                    navBar.setNeedsLayout()
+                    navBar.layoutIfNeeded()
+                }
             }
         }
     }

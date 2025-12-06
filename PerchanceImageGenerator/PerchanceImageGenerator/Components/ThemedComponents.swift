@@ -469,9 +469,22 @@ struct GlobalThemedNavigationTitle: ViewModifier {
         appearance.buttonAppearance = buttonAppearance
         appearance.doneButtonAppearance = buttonAppearance
         
-        // Note: We intentionally do NOT set UINavigationBar.appearance() here
-        // because it affects all navigation bars globally and causes theme flash issues.
-        // Instead, we rely on .tint() and .toolbarBackground() modifiers.
+        // Apply to all navigation bars in the app
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        
+        // Force existing navigation bars to update
+        DispatchQueue.main.async {
+            for window in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).flatMap({ $0.windows }) {
+                for navBar in window.subviews(ofType: UINavigationBar.self) {
+                    navBar.standardAppearance = appearance
+                    navBar.compactAppearance = appearance
+                    navBar.scrollEdgeAppearance = appearance
+                    navBar.setNeedsLayout()
+                }
+            }
+        }
     }
     
     private var colorScheme: ColorScheme {

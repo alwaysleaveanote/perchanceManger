@@ -44,9 +44,14 @@ struct PromptEditorView: View {
             globalDefaults: presetStore.globalDefaults
         )
     }
+    
+    /// The theme for this character - resolved locally
+    private var characterTheme: ResolvedTheme {
+        themeManager.resolvedTheme(forCharacterThemeId: character.characterThemeId)
+    }
 
     var body: some View {
-        let theme = themeManager.resolved
+        let theme = characterTheme
         
         VStack(alignment: .leading, spacing: 24) {
             // Title + images section - Card style
@@ -79,7 +84,7 @@ struct PromptEditorView: View {
 
             // Composed preview - Card style
             VStack(alignment: .leading, spacing: 0) {
-                PromptPreviewSection(composedPrompt: composedPrompt, height: 180)
+                PromptPreviewSection(composedPrompt: composedPrompt, maxHeight: 180)
             }
             .padding(16)
             .background(
@@ -155,8 +160,8 @@ struct PromptEditorView: View {
                     Text("Additional Information")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .fontDesign(themeManager.resolved.fontDesign)
-                        .foregroundColor(themeManager.resolved.textPrimary)
+                        .fontDesign(characterTheme.fontDesign)
+                        .foregroundColor(characterTheme.textPrimary)
 
                     DynamicGrowingTextEditor(
                         text: additionalInfoBinding,
@@ -168,10 +173,10 @@ struct PromptEditorView: View {
             }
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: themeManager.resolved.cornerRadiusMedium)
-                    .fill(themeManager.resolved.backgroundSecondary)
+                RoundedRectangle(cornerRadius: characterTheme.cornerRadiusMedium)
+                    .fill(characterTheme.backgroundSecondary)
             )
-            .shadow(color: themeManager.resolved.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+            .shadow(color: characterTheme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
 
             // Action buttons - Card style
             HStack(spacing: 16) {
@@ -187,10 +192,10 @@ struct PromptEditorView: View {
             }
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: themeManager.resolved.cornerRadiusMedium)
-                    .fill(themeManager.resolved.backgroundSecondary)
+                RoundedRectangle(cornerRadius: characterTheme.cornerRadiusMedium)
+                    .fill(characterTheme.backgroundSecondary)
             )
-            .shadow(color: themeManager.resolved.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+            .shadow(color: characterTheme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
         }
         .alert("Delete this prompt?", isPresented: $showingDeleteConfirm) {
             Button("Delete", role: .destructive) {
@@ -261,7 +266,7 @@ struct PromptEditorView: View {
     private func openGeneratorForCurrentPrompt() {
         let slug = character.characterDefaultPerchanceGenerator?.nonEmpty
             ?? presetStore.defaultPerchanceGenerator.nonEmpty
-            ?? "furry-ai"
+            ?? "ai-artgen"
 
         let urlString = "https://perchance.org/\(slug)"
         guard let url = URL(string: urlString) else { return }
@@ -273,7 +278,7 @@ struct PromptEditorView: View {
     // MARK: - Images Section
     
     private var imagesSection: some View {
-        let theme = themeManager.resolved
+        let theme = characterTheme
         
         return VStack(alignment: .leading, spacing: 12) {
             Text("Images")
@@ -332,7 +337,7 @@ struct PromptEditorView: View {
         text: Binding<String>,
         presetName: Binding<String?>
     ) -> some View {
-        let theme = themeManager.resolved
+        let theme = characterTheme
         
         return VStack(alignment: .leading, spacing: 10) {
             // Label row

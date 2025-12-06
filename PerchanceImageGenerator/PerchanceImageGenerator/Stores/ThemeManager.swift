@@ -1,117 +1,197 @@
+//
+//  ThemeManager.swift
+//  PerchanceImageGenerator
+//
+//  Central manager for app theming. Handles loading themes from bundled JSON files,
+//  managing theme selection, and providing resolved theme values to the UI.
+//
+
 import SwiftUI
 import Combine
 
-/// Manages theme loading, selection, and provides the current resolved theme
-/// Supports both global themes and character-specific theme overrides
+// MARK: - ThemeManager
+
+/// Central manager for application theming.
+///
+/// `ThemeManager` is responsible for:
+/// - Loading themes from bundled JSON files and custom theme directories
+/// - Managing the global theme selection (persisted to UserDefaults)
+/// - Providing helper functions to resolve character-specific themes
+/// - Providing a resolved global theme with computed color values for the UI
+///
+/// ## Theme Resolution
+/// - `resolved` always returns the global theme
+/// - Use `resolvedTheme(forCharacterThemeId:)` to get a character's theme
+/// - Character themes are resolved locally in views, not stored globally
+///
+/// ## Usage
+/// ```swift
+/// @EnvironmentObject var themeManager: ThemeManager
+///
+/// // Access global theme
+/// let backgroundColor = themeManager.resolved.background
+///
+/// // Change global theme
+/// themeManager.setGlobalTheme("cyberwave")
+///
+/// // Get character-specific theme (resolved locally, no global state)
+/// let charTheme = themeManager.resolvedTheme(forCharacterThemeId: character.characterThemeId)
+/// ```
 final class ThemeManager: ObservableObject {
+    
+    // MARK: - Constants
+    
+    private enum StorageKeys {
+        static let globalThemeId = "globalThemeId"
+    }
+    
+    private enum Defaults {
+        static let themeId = "default"
+    }
+    
+    /// Names of bundled theme JSON files (without extension)
+    private static let bundledThemeNames = [
+        "pastel", "adventure", "cyberwave",
+        "fae", "paladin", "druidic", "bubblegum", "lego",
+        "nerdy", "neonrave", "darkfantasy", "cottagecore",
+        "ocean", "steampunk", "vaporwave", "minimalist"
+    ]
     
     // MARK: - Published Properties
     
-    /// All available themes loaded from JSON files
+    /// All available themes (built-in + custom)
     @Published private(set) var availableThemes: [AppTheme] = []
     
-    /// The globally selected theme ID
+    /// The globally selected theme ID (persisted to UserDefaults)
     @Published var globalThemeId: String {
         didSet {
-            UserDefaults.standard.set(globalThemeId, forKey: "globalThemeId")
+            guard globalThemeId != oldValue else { return }
+            Logger.info("Global theme changed: '\(oldValue)' → '\(globalThemeId)'", category: .theme)
+            UserDefaults.standard.set(globalThemeId, forKey: StorageKeys.globalThemeId)
             updateResolvedTheme()
         }
     }
     
-    /// Currently active character's theme override (nil = use global)
-    @Published var activeCharacterThemeId: String? = nil {
-        didSet {
-            updateResolvedTheme()
-        }
-    }
-    
-    /// The resolved theme ready for use in views
+    /// The resolved GLOBAL theme with computed color values, ready for UI use.
+    /// This always reflects the global theme - use `resolvedTheme(for:)` for character-specific themes.
     @Published private(set) var resolved: ResolvedTheme
     
-    /// The raw theme currently in use
+    // MARK: - Computed Properties
+    
+    /// The raw global `AppTheme` currently in use
     var currentTheme: AppTheme {
-        if let charThemeId = activeCharacterThemeId,
-           let theme = availableThemes.first(where: { $0.id == charThemeId }) {
-            return theme
-        }
-        return availableThemes.first(where: { $0.id == globalThemeId }) ?? AppTheme.defaultTheme
+        availableThemes.first(where: { $0.id == globalThemeId }) ?? AppTheme.defaultTheme
+    }
+    
+    /// Alias for currentTheme for clarity
+    var globalTheme: AppTheme {
+        currentTheme
     }
     
     // MARK: - Initialization
     
+    /// Creates a new ThemeManager, loading saved preferences and available themes
     init() {
-        let savedThemeId = UserDefaults.standard.string(forKey: "globalThemeId") ?? "default"
+        // Load persisted theme selection
+        let savedThemeId = UserDefaults.standard.string(forKey: StorageKeys.globalThemeId) ?? Defaults.themeId
         self.globalThemeId = savedThemeId
         self.resolved = ResolvedTheme(source: AppTheme.defaultTheme)
         
+        Logger.info("Initializing with saved theme: '\(savedThemeId)'", category: .theme)
+        
+        // Load all available themes
         loadBuiltInThemes()
         loadCustomThemes()
         updateResolvedTheme()
+        
+        Logger.info("Theme manager ready with \(availableThemes.count) themes", category: .theme)
     }
     
     // MARK: - Theme Loading
     
-    /// Load built-in themes bundled with the app
+    /// Loads built-in themes bundled with the app
     private func loadBuiltInThemes() {
+        Logger.debug("Loading built-in themes", category: .theme)
+        
         // Always include the default theme
         var themes: [AppTheme] = [AppTheme.defaultTheme]
         
-        // Load bundled JSON theme files
-        let bundledThemeNames = [
-            "pastel", "adventure", "cyberwave",
-            "fae", "paladin", "druidic", "bubblegum", "kidcore",
-            "nerdy", "neonrave", "darkfantasy", "cottagecore",
-            "ocean", "steampunk", "vaporwave", "minimalist"
-        ]
-         
-        for themeName in bundledThemeNames {
-            if let url = Bundle.main.url(forResource: themeName, withExtension: "json") {
-                do {
-                    let data = try Data(contentsOf: url)
-                    let theme = try JSONDecoder().decode(AppTheme.self, from: data)
-                    themes.append(theme)
-                    print("[ThemeManager] Loaded theme: \(theme.name) (id: \(theme.id))")
-                } catch {
-                    print("[ThemeManager] Failed to load theme '\(themeName)': \(error)")
-                }
-            } else {
-                print("[ThemeManager] Theme file not found: \(themeName).json")
+        // Load each bundled theme JSON
+        for themeName in Self.bundledThemeNames {
+            if let theme = loadTheme(named: themeName) {
+                themes.append(theme)
             }
         }
         
-        print("[ThemeManager] Total themes loaded: \(themes.count)")
+        Logger.info("Loaded \(themes.count) built-in themes", category: .theme)
         availableThemes = themes
     }
     
-    /// Load custom themes from the app's documents directory
+    /// Loads a single theme from a bundled JSON file
+    /// - Parameter name: The filename without extension
+    /// - Returns: The loaded theme, or nil if loading failed
+    private func loadTheme(named name: String) -> AppTheme? {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "json") else {
+            Logger.warning("Theme file not found: \(name).json", category: .theme)
+            return nil
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let theme = try JSONDecoder().decode(AppTheme.self, from: data)
+            Logger.debug("Loaded theme: \(theme.name) (id: \(theme.id))", category: .theme)
+            return theme
+        } catch {
+            Logger.error("Failed to load theme '\(name)': \(error.localizedDescription)", category: .theme)
+            return nil
+        }
+    }
+    
+    /// Loads custom themes from the app's documents directory
     private func loadCustomThemes() {
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            Logger.warning("Could not access documents directory", category: .theme)
             return
         }
         
         let themesURL = documentsURL.appendingPathComponent("Themes", isDirectory: true)
         
-        // Create themes directory if it doesn't exist
-        try? FileManager.default.createDirectory(at: themesURL, withIntermediateDirectories: true)
+        // Create themes directory if needed
+        do {
+            try FileManager.default.createDirectory(at: themesURL, withIntermediateDirectories: true)
+        } catch {
+            Logger.error("Failed to create themes directory: \(error.localizedDescription)", category: .theme)
+            return
+        }
         
         // Load all JSON files from the themes directory
         guard let files = try? FileManager.default.contentsOfDirectory(at: themesURL, includingPropertiesForKeys: nil) else {
             return
         }
         
+        var customCount = 0
         for file in files where file.pathExtension == "json" {
             if let data = try? Data(contentsOf: file),
                let theme = try? JSONDecoder().decode(AppTheme.self, from: data) {
                 // Avoid duplicates
                 if !availableThemes.contains(where: { $0.id == theme.id }) {
                     availableThemes.append(theme)
+                    customCount += 1
+                    Logger.debug("Loaded custom theme: \(theme.name)", category: .theme)
                 }
             }
         }
+        
+        if customCount > 0 {
+            Logger.info("Loaded \(customCount) custom themes", category: .theme)
+        }
     }
     
-    /// Reload all themes (useful after adding new theme files)
+    /// Reloads all themes from disk
+    ///
+    /// Call this after adding new theme files to pick up changes.
     func reloadThemes() {
+        Logger.info("Reloading all themes", category: .theme)
         availableThemes = []
         loadBuiltInThemes()
         loadCustomThemes()
@@ -120,36 +200,63 @@ final class ThemeManager: ObservableObject {
     
     // MARK: - Theme Selection
     
-    /// Set the global theme by ID
-    func setGlobalTheme(_ themeId: String) {
-        guard availableThemes.contains(where: { $0.id == themeId }) else { return }
+    /// Sets the global theme by ID
+    /// - Parameter themeId: The ID of the theme to select
+    /// - Returns: True if the theme was found and selected
+    @discardableResult
+    func setGlobalTheme(_ themeId: String) -> Bool {
+        guard availableThemes.contains(where: { $0.id == themeId }) else {
+            Logger.warning("Attempted to set unknown theme: '\(themeId)'", category: .theme)
+            return false
+        }
         globalThemeId = themeId
+        return true
     }
     
-    /// Set a character-specific theme override
-    func setCharacterTheme(_ themeId: String?) { 
-        print("[ThemeManager] setCharacterTheme called with themeId: \(themeId ?? "nil")")
-        print("[ThemeManager] Previous activeCharacterThemeId: \(activeCharacterThemeId ?? "nil")")
-        activeCharacterThemeId = themeId
-        print("[ThemeManager] New activeCharacterThemeId: \(activeCharacterThemeId ?? "nil")")
-        print("[ThemeManager] Current resolved theme: \(resolved.source.id)")
+    /// Resolves the theme for a specific character.
+    /// If the character has a custom theme, returns that theme.
+    /// Otherwise, returns the global theme.
+    /// - Parameter characterThemeId: The character's theme ID (from CharacterProfile.characterThemeId)
+    /// - Returns: The resolved theme for the character
+    func resolvedTheme(forCharacterThemeId characterThemeId: String?) -> ResolvedTheme {
+        if let themeId = characterThemeId,
+           let theme = availableThemes.first(where: { $0.id == themeId }) {
+            return ResolvedTheme(source: theme)
+        }
+        return resolved // Fall back to global theme
     }
     
-    /// Clear the character theme override (revert to global)
-    func clearCharacterTheme() {
-        print("[ThemeManager] clearCharacterTheme called")
-        print("[ThemeManager] Previous activeCharacterThemeId: \(activeCharacterThemeId ?? "nil")")
-        activeCharacterThemeId = nil
-        print("[ThemeManager] Cleared - now using global theme: \(globalThemeId)")
-        print("[ThemeManager] Current resolved theme: \(resolved.source.id)")
+    /// Convenience method to get the AppTheme for a character theme ID
+    /// - Parameter characterThemeId: The character's theme ID
+    /// - Returns: The AppTheme if found, otherwise the global theme
+    func theme(forCharacterThemeId characterThemeId: String?) -> AppTheme {
+        if let themeId = characterThemeId,
+           let theme = availableThemes.first(where: { $0.id == themeId }) {
+            return theme
+        }
+        return globalTheme
+    }
+    
+    // MARK: - Theme Lookup
+    
+    /// Finds a theme by its ID
+    /// - Parameter id: The theme ID to find
+    /// - Returns: The theme if found, nil otherwise
+    func theme(withId id: String) -> AppTheme? {
+        availableThemes.first { $0.id == id }
     }
     
     // MARK: - Private Helpers
     
+    /// Updates the resolved global theme based on current selection
     private func updateResolvedTheme() {
         let oldThemeId = resolved.source.id
-        resolved = ResolvedTheme(source: currentTheme)
-        print("[ThemeManager] updateResolvedTheme: \(oldThemeId) -> \(resolved.source.id)")
+        let newTheme = globalTheme
+        resolved = ResolvedTheme(source: newTheme)
+        
+        if oldThemeId != newTheme.id {
+            Logger.debug("Global resolved theme updated: '\(oldThemeId)' → '\(newTheme.id)'", category: .theme)
+        }
     }
 }
 

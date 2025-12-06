@@ -22,6 +22,11 @@ struct CharacterDetailView: View {
     
     // Settings sheet
     @State private var showingSettings: Bool = false
+    
+    /// The theme for this character - resolved locally, not globally
+    private var characterTheme: ResolvedTheme {
+        themeManager.resolvedTheme(forCharacterThemeId: character.characterThemeId)
+    }
 
     var body: some View {
         ZStack {
@@ -63,7 +68,7 @@ struct CharacterDetailView: View {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 16, weight: .medium))
                         }
-                        .foregroundColor(themeManager.resolved.primary)
+                        .foregroundColor(characterTheme.primary)
                     }
                 }
             }
@@ -75,7 +80,7 @@ struct CharacterDetailView: View {
                     }
                 } label: {
                     Image(systemName: isSidebarVisible ? "line.3.horizontal.decrease" : "line.3.horizontal")
-                        .foregroundColor(themeManager.resolved.primary)
+                        .foregroundColor(characterTheme.primary)
                 }
                 .accessibilityLabel("Toggle saved prompts sidebar")
             }
@@ -110,17 +115,8 @@ struct CharacterDetailView: View {
                     .environmentObject(themeManager)
             }
         }
-        .onAppear {
-            print("[CharacterDetailView] onAppear - character id=\(character.id) name='\(character.name)'")
-            // Apply character-specific theme if set
-            themeManager.setCharacterTheme(character.characterThemeId)
-        }
-        .onDisappear {
-            print("[CharacterDetailView] onDisappear - clearing character theme")
-            // Clear character theme when leaving to prevent flash on characters list
-            themeManager.clearCharacterTheme()
-        }
-        .themedBackground()
+        // Theme is resolved locally via characterTheme - no global state management needed
+        .background(characterTheme.background.ignoresSafeArea())
     }
 
     // MARK: - Main Scroll View
@@ -172,7 +168,7 @@ struct CharacterDetailView: View {
     // MARK: - Sidebar
 
     private var sidebar: some View {
-        let theme = themeManager.resolved
+        let theme = characterTheme
         
         return VStack(alignment: .leading, spacing: 12) {
             Button(action: {
@@ -285,7 +281,7 @@ struct CharacterDetailView: View {
         .padding(12)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(
-            themeManager.resolved.backgroundSecondary
+            characterTheme.backgroundSecondary
         )
     }
 

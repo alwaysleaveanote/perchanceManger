@@ -15,9 +15,14 @@ struct CharacterOverviewView: View {
     @State private var newLinkURL: String = ""
     @State private var showAddLinkForm: Bool = false
     @State private var showingProfileImagePicker: Bool = false
+    
+    /// The theme for this character - resolved locally
+    private var characterTheme: ResolvedTheme {
+        themeManager.resolvedTheme(forCharacterThemeId: character.characterThemeId)
+    }
 
     var body: some View {
-        let theme = themeManager.resolved
+        let theme = characterTheme
         
         VStack(alignment: .leading, spacing: 20) {
             // Profile Card - centered hero section
@@ -47,7 +52,7 @@ struct CharacterOverviewView: View {
     // MARK: - Profile Card
     
     private var profileCard: some View {
-        let theme = themeManager.resolved
+        let theme = characterTheme
         
         return VStack(spacing: 12) {
             // Edit button at top left
@@ -125,8 +130,17 @@ struct CharacterOverviewView: View {
 
     // MARK: - Info Card (Bio & Notes)
     
+    /// Maximum height for scrollable text sections (approximately 15 lines)
+    private let maxTextHeight: CGFloat = 300
+    
+    /// Check if text exceeds the line limit for scrolling
+    private func needsScrolling(_ text: String) -> Bool {
+        let lineCount = text.components(separatedBy: .newlines).count
+        return lineCount > 15 || text.count > 800
+    }
+    
     private var infoCard: some View {
-        let theme = themeManager.resolved
+        let theme = characterTheme
         
         return VStack(alignment: .leading, spacing: 16) {
             // Bio Section
@@ -141,21 +155,17 @@ struct CharacterOverviewView: View {
                         text: $character.bio,
                         placeholder: "Character bio / description",
                         minLines: 2,
-                        maxLines: 6,
+                        maxLines: 10,
                         fontSize: 14
                     )
                 } else {
                     if character.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text("No bio yet. Tap 'Edit Character Info' to add one.")
+                        Text("No bio yet. Tap 'Edit' to add one.")
                             .font(.caption)
                             .fontDesign(theme.fontDesign)
                             .foregroundColor(theme.textSecondary)
                     } else {
-                        Text(character.bio)
-                            .font(.subheadline)
-                            .fontDesign(theme.fontDesign)
-                            .foregroundColor(theme.textPrimary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        scrollableTextView(text: character.bio, theme: theme)
                     }
                 }
             }
@@ -174,7 +184,7 @@ struct CharacterOverviewView: View {
                         text: $character.notes,
                         placeholder: "Any extra notes about this character",
                         minLines: 1,
-                        maxLines: 6,
+                        maxLines: 10,
                         fontSize: 14
                     )
                 } else {
@@ -184,11 +194,7 @@ struct CharacterOverviewView: View {
                             .fontDesign(theme.fontDesign)
                             .foregroundColor(theme.textSecondary)
                     } else {
-                        Text(character.notes)
-                            .font(.subheadline)
-                            .fontDesign(theme.fontDesign)
-                            .foregroundColor(theme.textPrimary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        scrollableTextView(text: character.notes, theme: theme)
                     }
                 }
             }
@@ -200,106 +206,150 @@ struct CharacterOverviewView: View {
         )
         .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
     }
+    
+    /// A text view that becomes scrollable when content exceeds 15 lines
+    @ViewBuilder
+    private func scrollableTextView(text: String, theme: ResolvedTheme) -> some View {
+        if needsScrolling(text) {
+            ScrollView {
+                Text(text)
+                    .font(.subheadline)
+                    .fontDesign(theme.fontDesign)
+                    .foregroundColor(theme.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: maxTextHeight)
+        } else {
+            Text(text)
+                .font(.subheadline)
+                .fontDesign(theme.fontDesign)
+                .foregroundColor(theme.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
 
     // MARK: - Links Card
 
     private var linksCard: some View {
-        let theme = themeManager.resolved
+        let theme = characterTheme
         
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("Related Links")
-                .font(.subheadline.weight(.semibold))
-                .fontDesign(theme.fontDesign)
-                .foregroundColor(theme.textPrimary)
-
-            if character.links.isEmpty {
-                Text("No related links yet.")
-                    .font(.caption)
+        return VStack(alignment: .leading, spacing: 16) {
+            // Header with add button
+            HStack {
+                Text("Related Links")
+                    .font(.subheadline.weight(.semibold))
                     .fontDesign(theme.fontDesign)
-                    .foregroundColor(theme.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(character.links) { link in
-                        HStack(spacing: 8) {
-                            if let url = URL(string: link.urlString) {
-                                Link(destination: url) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "link")
-                                        Text(link.title.isEmpty ? link.urlString : link.title)
-                                            .lineLimit(1)
-                                            .truncationMode(.tail)
-                                    }
-                                    .font(.subheadline)
-                                    .foregroundColor(theme.primary)
-                                }
-                            } else {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "exclamationmark.triangle")
-                                        .foregroundColor(theme.warning)
-                                    Text(link.title.isEmpty ? link.urlString : link.title)
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                }
-                                .font(.subheadline)
-                            }
-
-                            Spacer(minLength: 8)
-
-                            Button {
-                                removeLink(link)
-                            } label: {
-                                Image(systemName: "trash")
-                                    .font(.caption)
-                                    .foregroundColor(theme.error)
-                            }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel("Delete link")
+                    .foregroundColor(theme.textPrimary)
+                
+                Spacer()
+                
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        showAddLinkForm.toggle()
+                        if !showAddLinkForm {
+                            newLinkTitle = ""
+                            newLinkURL = ""
                         }
                     }
+                } label: {
+                    Image(systemName: showAddLinkForm ? "xmark" : "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(theme.textOnPrimary)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            Circle()
+                                .fill(showAddLinkForm ? theme.textSecondary : theme.primary)
+                        )
                 }
+                .buttonStyle(.plain)
             }
-
-            // Add link area
+            
+            // Add link form (expandable)
             if showAddLinkForm {
-                HStack(spacing: 8) {
-                    ThemedTextField(placeholder: "Title", text: $newLinkTitle)
-                        .frame(minWidth: 60)
-
-                    ThemedTextField(placeholder: "https://...", text: $newLinkURL)
-
+                VStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Title")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(theme.textSecondary)
+                        ThemedTextField(placeholder: "e.g. Character Reference", text: $newLinkTitle)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("URL")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(theme.textSecondary)
+                        ThemedTextField(placeholder: "https://...", text: $newLinkURL)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                    
                     Button {
                         addLink()
                     } label: {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(theme.success)
-                    }
-                    .disabled(newLinkURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                    Button {
-                        newLinkTitle = ""
-                        newLinkURL = ""
-                        withAnimation {
-                            showAddLinkForm = false
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add Link")
                         }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(theme.error)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(theme.textOnPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                                .fill(newLinkURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty 
+                                      ? theme.primary.opacity(0.5) 
+                                      : theme.primary)
+                        )
                     }
+                    .buttonStyle(.plain)
+                    .disabled(newLinkURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-                .font(.subheadline)
-            } else {
-                Button {
-                    withAnimation {
-                        showAddLinkForm = true
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .fill(theme.backgroundTertiary)
+                )
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.95).combined(with: .opacity),
+                    removal: .scale(scale: 0.95).combined(with: .opacity)
+                ))
+            }
+
+            // Links list
+            if character.links.isEmpty && !showAddLinkForm {
+                HStack {
+                    Spacer()
+                    VStack(spacing: 8) {
+                        Image(systemName: "link.circle")
+                            .font(.system(size: 32))
+                            .foregroundColor(theme.textSecondary.opacity(0.4))
+                        Text("No links yet")
+                            .font(.caption)
+                            .foregroundColor(theme.textSecondary)
+                        Text("Tap + to add reference links")
+                            .font(.caption2)
+                            .foregroundColor(theme.textSecondary.opacity(0.7))
                     }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus.circle")
-                        Text("Add Link")
+                    .padding(.vertical, 16)
+                    Spacer()
+                }
+            } else if !character.links.isEmpty {
+                // Make scrollable if more than 4 links
+                if character.links.count > 4 {
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            ForEach(character.links) { link in
+                                linkRow(link: link, theme: theme)
+                            }
+                        }
                     }
-                    .font(.subheadline)
-                    .foregroundColor(theme.primary)
+                    .frame(maxHeight: 280) // Approximately 4 link rows
+                } else {
+                    VStack(spacing: 8) {
+                        ForEach(character.links) { link in
+                            linkRow(link: link, theme: theme)
+                        }
+                    }
                 }
             }
         }
@@ -310,6 +360,79 @@ struct CharacterOverviewView: View {
                 .fill(theme.backgroundSecondary)
         )
         .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+    
+    /// Individual link row with modern styling
+    private func linkRow(link: RelatedLink, theme: ResolvedTheme) -> some View {
+        HStack(spacing: 12) {
+            // Icon with background
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(theme.primary.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                
+                Image(systemName: link.isValid ? "link" : "exclamationmark.triangle")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(link.isValid ? theme.primary : theme.warning)
+            }
+            
+            // Link info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(link.title.isEmpty ? "Untitled Link" : link.title)
+                    .font(.subheadline.weight(.medium))
+                    .fontDesign(theme.fontDesign)
+                    .foregroundColor(theme.textPrimary)
+                    .lineLimit(1)
+                
+                if let host = link.host {
+                    Text(host)
+                        .font(.caption2)
+                        .foregroundColor(theme.textSecondary)
+                        .lineLimit(1)
+                } else {
+                    Text(link.urlString)
+                        .font(.caption2)
+                        .foregroundColor(theme.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+            
+            Spacer()
+            
+            // Action buttons
+            HStack(spacing: 4) {
+                // Open link button
+                if let url = link.url {
+                    Button {
+                        UIApplication.shared.open(url)
+                    } label: {
+                        Image(systemName: "arrow.up.right.square")
+                            .font(.system(size: 16))
+                            .foregroundColor(theme.primary)
+                            .frame(width: 32, height: 32)
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                // Delete button
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        removeLink(link)
+                    }
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14))
+                        .foregroundColor(theme.error.opacity(0.8))
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                .fill(theme.backgroundTertiary)
+        )
     }
     
     private func removeLink(_ link: RelatedLink) {
@@ -324,13 +447,14 @@ struct CharacterOverviewView: View {
 
         let trimmedTitle = newLinkTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         let link = RelatedLink(
-            title: trimmedTitle.isEmpty ? trimmedURL : trimmedTitle,
+            title: trimmedTitle,
             urlString: trimmedURL
         )
-        character.links.append(link)
-        newLinkTitle = ""
-        newLinkURL = ""
-        withAnimation {
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            character.links.append(link)
+            newLinkTitle = ""
+            newLinkURL = ""
             showAddLinkForm = false
         }
     }
@@ -338,7 +462,7 @@ struct CharacterOverviewView: View {
     // MARK: - Gallery Card
 
     private var galleryCard: some View {
-        let theme = themeManager.resolved
+        let theme = characterTheme
         
         return VStack(alignment: .leading, spacing: 12) {
             Text("Image Gallery")
