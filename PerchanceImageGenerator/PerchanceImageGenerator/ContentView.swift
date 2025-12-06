@@ -1,20 +1,25 @@
-// ContentView.swift
-
 import SwiftUI
 
-struct ContentView: View {
-    @StateObject private var presetStore = PromptPresetStore()
+// Small wrapper so we can use .sheet(item:)
+struct SafariItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
 
-    @State private var characters: [CharacterProfile] = CharacterProfile.sampleCharacters
+struct ContentView: View {
+    @StateObject var presetStore = PromptPresetStore()
+
     @State private var scratchpadPrompt: String = ""
     @State private var scratchpadSaved: [SavedPrompt] = []
 
-    @State private var safariURL: URL?
-    @State private var showingSafari: Bool = false
+    @State private var characters: [CharacterProfile] =
+        CharacterProfile.sampleCharacters
+
+    // Instead of Bool + URL?, we use a single optional item
+    @State private var safariItem: SafariItem? = nil
 
     var body: some View {
         TabView {
-            // Scratchpad tab
             ScratchpadView(
                 scratchpadPrompt: $scratchpadPrompt,
                 scratchpadSaved: $scratchpadSaved,
@@ -24,7 +29,6 @@ struct ContentView: View {
                 Label("Scratchpad", systemImage: "square.and.pencil")
             }
 
-            // Characters tab
             CharactersView(
                 characters: $characters,
                 openGenerator: openGenerator
@@ -33,30 +37,34 @@ struct ContentView: View {
                 Label("Characters", systemImage: "person.3")
             }
 
-            // Global settings tab
             GlobalSettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape")
                 }
         }
         .environmentObject(presetStore)
-        .sheet(isPresented: $showingSafari) {
-            if let url = safariURL {
-                SafariView(url: url)
-            }
+        // Sheet now appears ONLY when safariItem is non-nil
+        .sheet(item: $safariItem) { item in
+            SafariView(url: item.url)
         }
     }
 
-    // MARK: - Open furry generator in SafariViewController
+    // MARK: - Open Perchance generator
 
     private func openGenerator(_ prompt: String) {
-        var components = URLComponents(string: "https://perchance.org/furry-ai")
-        components?.queryItems = [
-            URLQueryItem(name: "prompt", value: prompt)
-        ]
+        let slug = presetStore.defaultPerchanceGenerator.isEmpty
+            ? "furry-ai"
+            : presetStore.defaultPerchanceGenerator
 
-        let url = components?.url ?? URL(string: "https://perchance.org/furry-ai")!
-        safariURL = url
-        showingSafari = true
+        let urlString = "https://perchance.org/\(slug)"
+        guard let url = URL(string: urlString) else { return }
+
+        // Copy prompt for convenience
+        UIPasteboard.general.string = prompt
+
+        // Open in the Safari app instead of in-app SafariView
+        UIApplication.shared.open(url, options: [:]) { success in
+            print("[openGenerator] Opened in Safari app: \(success)")
+        }
     }
 }

@@ -131,9 +131,18 @@ struct PromptPreset: Identifiable, Codable, Equatable {
 final class PromptPresetStore: ObservableObject {
     @Published var presets: [PromptPreset] = []
     @Published var globalDefaults: [GlobalDefaultKey: String] = [:]
+    @Published var defaultPerchanceGenerator: String =
+        UserDefaults.standard.string(forKey: "defaultPerchanceGenerator") ?? "ai-vibrant-image-generator" {
+        didSet {
+            print("[PromptPresetStore] defaultPerchanceGenerator didSet -> '\(defaultPerchanceGenerator)'")
+            UserDefaults.standard.set(defaultPerchanceGenerator, forKey: "defaultPerchanceGenerator")
+        }
+    }
 
     // ⬇️ ADD THIS
     init() {
+        print("[PromptPresetStore] init() – in-memory defaultPerchanceGenerator = '\(defaultPerchanceGenerator)'")
+
         // Sample presets for testing
         presets = [
             // Outfit
@@ -296,8 +305,8 @@ extension String {
 extension CharacterProfile {
     static let sampleCharacters: [CharacterProfile] = [
         CharacterProfile(
-            name: "Rin the Arctic Fox",
-            bio: "A curious arctic fox who loves tinkering with old tech and exploring frozen ruins.",
+            name: "Rin",
+            bio: "A curious tabaxi who loves tinkering with old tech and exploring frozen ruins.",
             notes: "Main test character. Great for trying cozy vs. dramatic prompts.",
             prompts: [
                 SavedPrompt(
@@ -314,7 +323,7 @@ extension CharacterProfile {
                 SavedPrompt(
                     title: "Cozy Cabin Portrait",
                     text: "Rin relaxing in a warm cabin",
-                    outfit: "soft sweater, comfy pants, casual look",
+                    outfit: "soft sweater, comfy pants, casual looksoft sweater, comfy pants, casual looksoft sweater, comfy pants, casual looksoft sweater, comfy pants, casual looksoft sweater, comfy pants, casual look",
                     pose: "sitting cross-legged on a couch, holding a mug",
                     environment: "cozy wooden cabin, fireplace, bookshelves, warm lighting",
                     lighting: "warm soft lamp light, gentle shadows",

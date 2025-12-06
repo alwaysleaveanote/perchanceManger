@@ -5,13 +5,20 @@ struct SafariView: UIViewControllerRepresentable {
     let url: URL
 
     func makeUIViewController(context: Context) -> SFSafariViewController {
+        print("[SafariView] makeUIViewController with URL = \(url.absoluteString)")
+
         let config = SFSafariViewController.Configuration()
         config.entersReaderIfAvailable = false
-        return SFSafariViewController(url: url, configuration: config)
+
+        let vc = SFSafariViewController(url: url, configuration: config)
+        vc.modalPresentationStyle = .fullScreen
+        vc.preferredBarTintColor = nil
+        vc.preferredControlTintColor = .label
+
+        return vc
     }
 
-    func updateUIViewController(_ uiViewController: SFSafariViewController,
-                                context: Context) {
-        // no-op
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {
+        // No updates needed for now
     }
 }

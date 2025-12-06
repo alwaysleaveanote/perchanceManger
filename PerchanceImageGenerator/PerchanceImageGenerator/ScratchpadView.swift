@@ -51,11 +51,11 @@ struct ScratchpadView: View {
 
                     Button {
                         openGenerator(scratchpadPrompt)
-                        status = "Prompt copied. Opening furry-ai…"
+                        status = "Prompt copied. Opening generator…"
                     } label: {
                         HStack {
                             Spacer()
-                            Text("Open Furry Generator with Scratchpad")
+                            Text("Open Generator")
                                 .fontWeight(.semibold)
                             Spacer()
                         }

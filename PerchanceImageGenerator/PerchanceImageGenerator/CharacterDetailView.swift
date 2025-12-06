@@ -97,7 +97,16 @@ struct CharacterDetailView: View {
                 PromptEditorView(
                     character: $character,
                     promptIndex: idx,
-                    openGenerator: openGenerator
+                    openGenerator: openGenerator,
+                    onDelete: {
+                        // Safely remove this prompt and update selection
+                        if character.prompts.indices.contains(idx) {
+                            character.prompts.remove(at: idx)
+                                selectedPromptIndex = nil
+                        } else {
+                            selectedPromptIndex = nil
+                        }
+                    }
                 )
             } else {
                 CharacterOverviewView(
@@ -541,6 +550,8 @@ struct PromptEditorView: View {
     @Binding var character: CharacterProfile
     let promptIndex: Int
     let openGenerator: (String) -> Void
+    let onDelete: () -> Void
+    @State private var showingDeleteConfirm: Bool = false
 
     @EnvironmentObject var presetStore: PromptPresetStore
 
@@ -572,7 +583,6 @@ struct PromptEditorView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Images carousel at the top
-            imagesSection
 
             // Title + open button
             HStack {
@@ -592,15 +602,11 @@ struct PromptEditorView: View {
                 }
                 .buttonStyle(.borderedProminent)
             }
+            
+            imagesSection
 
-            // Optional combined text field
-            DynamicGrowingTextEditor(
-                text: textBinding,
-                placeholder: "Optional combined prompt / notes",
-                minLines: 1,
-                maxLines: 4
-            )
 
+            
             // Composed preview (we’ll update this next)
             promptPreviewSection
 
@@ -671,20 +677,50 @@ struct PromptEditorView: View {
             }
 
             Spacer(minLength: 0)
-        }
-        .background(
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear {
-                        let p = promptBinding.wrappedValue
-                        print("[DEBUG] PromptEditorView appear — index=\(promptIndex), title='\(p.title)', width=\(proxy.size.width)")
+            
+            HStack {
+                Spacer()
+                Button(role: .destructive) {
+                    showingDeleteConfirm = true
+                } label: {
+                    HStack {
+                        Image(systemName: "trash")
+                        Text("Delete Prompt")
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                }
+                Spacer()
             }
-        )
-
-        // sheets (gallery + picker) unchanged...
+        }
+        .alert("Delete this prompt?", isPresented: $showingDeleteConfirm) {
+            Button("Delete", role: .destructive) {
+                onDelete()
+            }
+            Button("Cancel", role: .cancel) { }
+        }
+        .sheet(isPresented: $showingPromptImagePicker) {
+            ImagePicker { uiImages in
+                var updated = promptBinding.wrappedValue
+                for image in uiImages {
+                    if let data = image.jpegData(compressionQuality: 0.9) {
+                        updated.images.append(
+                            PromptImage(id: UUID(), data: data)
+                        )
+                    }
+                }
+                promptBinding.wrappedValue = updated
+            }
+        }
+        // 🔽 (Optional but already wired via showingPromptGallery)
+        .fullScreenCover(isPresented: $showingPromptGallery) {
+            GalleryView(
+                images: promptBinding.wrappedValue.images,
+                startIndex: promptGalleryStartIndex
+            )
+        }
     }
-    
+
     private var promptPreviewSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -719,16 +755,6 @@ struct PromptEditorView: View {
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.leading)
                         .padding(12)
-                        .onAppear {
-                            let preview = composedPrompt
-                            print(
-                                """
-                                [DEBUG] Prompt preview appear — index=\(promptIndex), title='\(promptBinding.wrappedValue.title)'
-                                  length=\(preview.count)
-                                  first 120 chars=\(preview.prefix(120))
-                                """
-                            )
-                        }
                 }
             }
             .frame(height: 250) // fixed preview height
@@ -935,8 +961,17 @@ struct PromptEditorView: View {
                 Button {
                     showingPromptImagePicker = true
                 } label: {
-                    Label("Add Image", systemImage: "plus")
-                        .labelStyle(.iconOnly)
+                    HStack(spacing: 6) {
+                        Image(systemName: "photo.badge.plus")
+                        Text("Upload Image")
+                    }
+                    .font(.footnote)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color(.secondarySystemBackground))
+                    )
                 }
             }
 
