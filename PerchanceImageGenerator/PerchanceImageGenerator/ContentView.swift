@@ -23,11 +23,14 @@ struct ContentView: View {
             ScratchpadView(
                 scratchpadPrompt: $scratchpadPrompt,
                 scratchpadSaved: $scratchpadSaved,
+                characters: $characters,
                 openGenerator: openGenerator
             )
             .tabItem {
                 Label("Scratchpad", systemImage: "square.and.pencil")
             }
+
+
 
             CharactersView(
                 characters: $characters,

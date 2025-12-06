@@ -9,21 +9,21 @@ struct DynamicGrowingTextEditor: View {
     let placeholder: String
     let minLines: Int
     let maxLines: Int
-
+    
     @State private var measuredHeight: CGFloat = 0
-
+    
     private var lineHeight: CGFloat {
         UIFont.preferredFont(forTextStyle: .body).lineHeight
     }
-
+    
     private var minHeight: CGFloat {
         CGFloat(max(minLines, 1)) * lineHeight + 16 // padding
     }
-
+    
     private var maxHeight: CGFloat {
         CGFloat(max(maxLines, minLines)) * lineHeight + 16 // padding
     }
-
+    
     public init(
         text: Binding<String>,
         placeholder: String,
@@ -35,18 +35,11 @@ struct DynamicGrowingTextEditor: View {
         self.minLines = minLines
         self.maxLines = maxLines
     }
-
+    
     public var body: some View {
         ZStack(alignment: .topLeading) {
-            // Placeholder overlay (never part of the model)
-            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text(placeholder)
-                    .foregroundColor(Color(.placeholderText))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 8)
-            }
-
-            // Actual editor
+            
+            // Actual editor (on the bottom)
             TextEditor(text: $text)
                 .font(.body)
                 .frame(
@@ -59,6 +52,16 @@ struct DynamicGrowingTextEditor: View {
                 .background(
                     HeightReader(text: text, height: $measuredHeight)
                 )
+            
+            // Placeholder overlay (ON TOP of the editor)
+            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               !placeholder.isEmpty {
+                Text(placeholder)
+                    .foregroundColor(Color(.placeholderText))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 8)
+                    .allowsHitTesting(false)  // so taps still focus the TextEditor
+            }
         }
         .overlay(
             RoundedRectangle(cornerRadius: 8)
@@ -66,7 +69,6 @@ struct DynamicGrowingTextEditor: View {
         )
     }
 }
-
 /// A helper view that measures the height of the given text
 /// using the same font & width as the TextEditor.
 private struct HeightReader: View {

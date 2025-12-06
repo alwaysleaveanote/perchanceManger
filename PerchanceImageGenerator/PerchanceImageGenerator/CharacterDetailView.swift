@@ -18,8 +18,10 @@ struct CharacterDetailView: View {
     // Editing mode for overview (bio + notes)
     @State private var isEditingCharacterInfo: Bool = false
 
+
     var body: some View {
         ZStack {
+
             // Main scroll content
             mainScrollView
 
@@ -42,7 +44,6 @@ struct CharacterDetailView: View {
                 }
             }
         }
-        .navigationTitle(character.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // Leading: Edit Character Info (only on overview)
@@ -73,6 +74,7 @@ struct CharacterDetailView: View {
                 startIndex: galleryStartIndex
             )
         }
+
     }
 
     // MARK: - Main Scroll View
@@ -80,6 +82,7 @@ struct CharacterDetailView: View {
     private var mainScrollView: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
+
                 mainColumn
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -127,18 +130,25 @@ struct CharacterDetailView: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 12) {
             Button(action: {
-                // Create new prompt seeded with global defaults and select it
+                // Helper to get the effective default for this character:
+                // 1) character-specific default if set
+                // 2) otherwise global default
+                func effectiveDefault(_ key: GlobalDefaultKey) -> String? {
+                    character.characterDefaults[key]?.nonEmpty
+                        ?? presetStore.globalDefaults[key]?.nonEmpty
+                }
+
                 let newPrompt = SavedPrompt(
                     title: "New Prompt",
                     text: "",
-                    physicalDescription: presetStore.globalDefaults[.physicalDescription],
-                    outfit: presetStore.globalDefaults[.outfit],
-                    pose: presetStore.globalDefaults[.pose],
-                    environment: presetStore.globalDefaults[.environment],
-                    lighting: presetStore.globalDefaults[.lighting],
-                    styleModifiers: presetStore.globalDefaults[.style],
-                    technicalModifiers: presetStore.globalDefaults[.technical],
-                    negativePrompt: presetStore.globalDefaults[.negative]
+                    physicalDescription: effectiveDefault(.physicalDescription),
+                    outfit:              effectiveDefault(.outfit),
+                    pose:                effectiveDefault(.pose),
+                    environment:         effectiveDefault(.environment),
+                    lighting:            effectiveDefault(.lighting),
+                    styleModifiers:      effectiveDefault(.style),
+                    technicalModifiers:  effectiveDefault(.technical),
+                    negativePrompt:      effectiveDefault(.negative)
                 )
 
                 character.prompts.append(newPrompt)
@@ -147,7 +157,8 @@ struct CharacterDetailView: View {
                 withAnimation {
                     isSidebarVisible = false
                 }
-            }) {
+            })
+ {
                 Text("Create New Prompt")
                     .font(.subheadline)
                     .fontWeight(.semibold)
@@ -196,6 +207,20 @@ struct CharacterDetailView: View {
                         .fontWeight(.semibold)
                 }
             )
+            
+            // 🔹 NEW: Character Settings link
+            NavigationLink {
+                CharacterSettingsView(character: $character)
+                    .environmentObject(presetStore)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "gearshape")
+                    Text("Character Settings")
+                }
+                .font(.subheadline.weight(.semibold))
+                .padding(.top, 12)
+            }
+            .buttonStyle(.plain)
 
             Spacer()
         }
@@ -410,23 +435,39 @@ struct CharacterOverviewView: View {
             } else {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(character.links) { link in
-                        if let url = URL(string: link.urlString) {
-                            Link(destination: url) {
+                        HStack(spacing: 8) {
+
+                            // Existing link display
+                            if let url = URL(string: link.urlString) {
+                                Link(destination: url) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "link")
+                                        Text(link.title.isEmpty ? link.urlString : link.title)
+                                            .lineLimit(1)
+                                            .truncationMode(.tail)
+                                    }
+                                }
+                            } else {
                                 HStack(spacing: 6) {
-                                    Image(systemName: "link")
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .foregroundColor(.yellow)
                                     Text(link.title.isEmpty ? link.urlString : link.title)
                                         .lineLimit(1)
                                         .truncationMode(.tail)
                                 }
                             }
-                        } else {
-                            HStack(spacing: 6) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .foregroundColor(.yellow)
-                                Text(link.title.isEmpty ? link.urlString : link.title)
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
+
+                            Spacer(minLength: 8)
+
+                            // 🔴 New: delete button
+                            Button {
+                                removeLink(link)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
                             }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Delete link")
                         }
                     }
                 }
@@ -435,25 +476,43 @@ struct CharacterOverviewView: View {
             // Add link area
             if showAddLinkForm {
                 HStack(spacing: 8) {
-                    DynamicGrowingTextEditor(
-                        text: $newLinkTitle,
-                        placeholder: "Link title",
-                        minLines: 0,
-                        maxLines: 1
-                    )
-                    
-                    DynamicGrowingTextEditor(
-                        text: $newLinkURL,
-                        placeholder: "https://example.com",
-                        minLines: 0,
-                        maxLines: 1
-                    )
-                        .textFieldStyle(.roundedBorder)
+
+                    // 🔹 Title field with placeholder
+                    ZStack(alignment: .leading) {
+                        if newLinkTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            Text("Link title")
+                                .foregroundColor(.secondary)
+                                .padding(.leading, 6)
+                        }
+                        DynamicGrowingTextEditor(
+                            text: $newLinkTitle,
+                            placeholder: "",
+                            minLines: 1,
+                            maxLines: 1
+                        )
+                    }
+                    .frame(minWidth: 80)
+
+                    // 🔹 URL field with placeholder
+                    ZStack(alignment: .leading) {
+                        if newLinkURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            Text("https://example.com")
+                                .foregroundColor(.secondary)
+                                .padding(.leading, 6)
+                        }
+                        DynamicGrowingTextEditor(
+                            text: $newLinkURL,
+                            placeholder: "",
+                            minLines: 1,
+                            maxLines: 1
+                        )
                         .keyboardType(.URL)
                         .autocapitalization(.none)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
+                    }
 
+                    // Save button
                     Button {
                         addLink()
                     } label: {
@@ -461,6 +520,7 @@ struct CharacterOverviewView: View {
                     }
                     .disabled(newLinkURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
+                    // Cancel button
                     Button {
                         newLinkTitle = ""
                         newLinkURL = ""
@@ -472,7 +532,8 @@ struct CharacterOverviewView: View {
                     }
                 }
                 .font(.subheadline)
-            } else {
+            }
+ else {
                 Button {
                     withAnimation {
                         showAddLinkForm = true
@@ -487,6 +548,13 @@ struct CharacterOverviewView: View {
             }
         }
     }
+    
+    private func removeLink(_ link: RelatedLink) {
+        if let index = character.links.firstIndex(where: { $0.id == link.id }) {
+            character.links.remove(at: index)
+        }
+    }
+
 
     private func addLink() {
         let trimmedURL = newLinkURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -560,6 +628,14 @@ struct PromptEditorView: View {
     @State private var showingPromptGallery: Bool = false
     @State private var promptGalleryStartIndex: Int = 0
     @State private var showingPromptImagePicker: Bool = false
+    
+    // 🔹 New: state for creating presets from section text
+    @State private var isShowingPresetSaveAlert: Bool = false
+    @State private var pendingPresetKind: PromptSectionKind? = nil
+    @State private var pendingPresetText: String = ""
+    @State private var pendingPresetLabel: String = ""
+    @State private var pendingPresetNameInput: String = ""
+
 
     private var promptBinding: Binding<SavedPrompt> {
         Binding(
@@ -571,6 +647,104 @@ struct PromptEditorView: View {
     private var prompt: SavedPrompt {
         promptBinding.wrappedValue
     }
+    
+    
+    // Start the "save as preset" flow for a section
+    private func beginSavingPreset(
+        from text: String,
+        kind: PromptSectionKind,
+        label: String
+    ) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        pendingPresetText = trimmed
+        pendingPresetKind = kind
+        pendingPresetLabel = label
+        pendingPresetNameInput = label   // default suggestion
+        isShowingPresetSaveAlert = true
+    }
+
+    // After we add a preset, re-run detection so "Using: X" appears immediately
+    private func resyncAllPresetMarkers() {
+        updatePresetNameForCurrentText(
+            kind: .physicalDescription,
+            text: physicalDescriptionBinding,
+            presetName: physicalDescriptionPresetNameBinding
+        )
+        updatePresetNameForCurrentText(
+            kind: .outfit,
+            text: outfitBinding,
+            presetName: outfitPresetNameBinding
+        )
+        updatePresetNameForCurrentText(
+            kind: .pose,
+            text: poseBinding,
+            presetName: posePresetNameBinding
+        )
+        updatePresetNameForCurrentText(
+            kind: .environment,
+            text: environmentBinding,
+            presetName: environmentPresetNameBinding
+        )
+        updatePresetNameForCurrentText(
+            kind: .lighting,
+            text: lightingBinding,
+            presetName: lightingPresetNameBinding
+        )
+        updatePresetNameForCurrentText(
+            kind: .style,
+            text: styleModifiersBinding,
+            presetName: stylePresetNameBinding
+        )
+        updatePresetNameForCurrentText(
+            kind: .technical,
+            text: technicalModifiersBinding,
+            presetName: technicalPresetNameBinding
+        )
+        updatePresetNameForCurrentText(
+            kind: .negative,
+            text: negativePromptBinding,
+            presetName: negativePresetNameBinding
+        )
+    }
+
+    // MARK: - Preset detection helper
+
+    private func updatePresetNameForCurrentText(
+        kind: PromptSectionKind,
+        text: Binding<String>,
+        presetName: Binding<String?>
+    ) {
+        let presets = presetStore.presets(of: kind)
+        let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // If text is empty, clear any preset info
+        guard !trimmed.isEmpty else {
+            if presetName.wrappedValue != nil {
+                presetName.wrappedValue = nil
+            }
+            return
+        }
+
+        // If we already have a presetName and it still matches exactly, keep it
+        if let currentName = presetName.wrappedValue,
+           let currentPreset = presets.first(where: { $0.name == currentName }),
+           currentPreset.text.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed {
+            return
+        }
+
+        // Otherwise, see if any preset text matches exactly
+        if let match = presets.first(where: {
+            $0.text.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed
+        }) {
+            presetName.wrappedValue = match.name
+        } else if presetName.wrappedValue != nil {
+            // Text no longer matches any preset → clear the marker
+            presetName.wrappedValue = nil
+        }
+    }
+
 
     private var composedPrompt: String {
         PromptComposer.composePrompt(
@@ -583,28 +757,29 @@ struct PromptEditorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Images carousel at the top
-
-            // Title + open button
-            HStack {
-                
-                DynamicGrowingTextEditor(
-                    text: titleBinding,
-                    placeholder: "Prompt title",
-                    minLines: 0,
-                    maxLines: 1
-                )
-                    .font(.headline)
-
-                Spacer()
-
-                Button("Open Generator") {
-                    openGenerator(composedPrompt)
-                }
-                .buttonStyle(.borderedProminent)
-            }
             
-            imagesSection
+            // Title + open button (restyled)
+            VStack(alignment: .leading, spacing: 8) {
+                // Title label + inline editable title
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Prompt title")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        TextField("Untitled prompt", text: titleBinding)
+                            .font(.title3.weight(.semibold))
+                            .textFieldStyle(.plain)
+                    }
+
+                    Spacer()
+                }
+
+                // Open Generator button, separated from the title
+                imagesSection
+            }
+
+            
 
 
             
@@ -685,19 +860,31 @@ struct PromptEditorView: View {
             }
 
             Spacer(minLength: 0)
-            
-            HStack {
+            HStack(spacing: 16) {
                 Spacer()
+
+                Button {
+                    openGeneratorForCurrentPrompt()
+                } label: {
+                    Label("Open Generator", systemImage: "sparkles")
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.regular)
+
                 Button(role: .destructive) {
                     showingDeleteConfirm = true
                 } label: {
-                    HStack {
-                        Image(systemName: "trash")
-                        Text("Delete Prompt")
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
+                    Label("Delete Prompt", systemImage: "trash")
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.regular)
+
                 Spacer()
             }
         }
@@ -727,7 +914,60 @@ struct PromptEditorView: View {
                 startIndex: promptGalleryStartIndex
             )
         }
+        .alert("Save as preset", isPresented: $isShowingPresetSaveAlert) {
+            TextField("Preset name", text: $pendingPresetNameInput)
+
+            Button("Save") {
+                let nameTrimmed = pendingPresetNameInput
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let finalName = nameTrimmed.isEmpty
+                    ? pendingPresetLabel
+                    : nameTrimmed
+
+                if let kind = pendingPresetKind {
+                    presetStore.addPreset(
+                        kind: kind,
+                        name: finalName,
+                        text: pendingPresetText
+                    )
+                    // Immediately refresh the "Using: ..." markers
+                    resyncAllPresetMarkers()
+                }
+
+                // Reset state
+                pendingPresetKind = nil
+                pendingPresetText = ""
+                pendingPresetLabel = ""
+                pendingPresetNameInput = ""
+            }
+
+            Button("Cancel", role: .cancel) {
+                pendingPresetKind = nil
+                pendingPresetText = ""
+                pendingPresetLabel = ""
+                pendingPresetNameInput = ""
+            }
+        } message: {
+            Text("Save the current text as a reusable preset for this section.")
+        }
+
     }
+    
+    private func openGeneratorForCurrentPrompt() {
+        // Character-level generator takes precedence; then global; then fallback.
+        let slug = character.characterDefaultPerchanceGenerator?.nonEmpty
+            ?? presetStore.defaultPerchanceGenerator.nonEmpty
+            ?? "furry-ai"
+
+        let urlString = "https://perchance.org/\(slug)"
+        guard let url = URL(string: urlString) else { return }
+
+        // Copy prompt for convenience
+        UIPasteboard.general.string = composedPrompt
+
+        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+    }
+
 
     private var promptPreviewSection: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -923,7 +1163,10 @@ struct PromptEditorView: View {
                     .fontWeight(.semibold)
 
                 let presets = presetStore.presets(of: kind)
+                let trimmed = text.wrappedValue
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
 
+                // Existing: Apply menu for known presets
                 if !presets.isEmpty {
                     Menu {
                         ForEach(presets) { preset in
@@ -943,10 +1186,25 @@ struct PromptEditorView: View {
                     }
                 }
 
+                // Show either "Using: <preset>" *or* a "Save as preset" button
                 if let name = presetName.wrappedValue, !name.isEmpty {
                     Text("(Using: \(name))")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                } else if !trimmed.isEmpty {
+                    Button {
+                        beginSavingPreset(
+                            from: text.wrappedValue,
+                            kind: kind,
+                            label: label
+                        )
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.badge.plus")
+                            Text("Save as preset")
+                        }
+                        .font(.caption)
+                    }
                 }
 
                 Spacer()
@@ -958,14 +1216,21 @@ struct PromptEditorView: View {
                 minLines: 0,
                 maxLines: 5
             )
-            .onChange(of: text.wrappedValue) { oldValue, newValue in
-                if let name = presetName.wrappedValue,
-                   let preset = presetStore.presets(of: kind).first(where: { $0.name == name }) {
-                    if newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                        != preset.text.trimmingCharacters(in: .whitespacesAndNewlines) {
-                        presetName.wrappedValue = nil
-                    }
-                }
+            .onAppear {
+                // Initial detection when the row first appears
+                updatePresetNameForCurrentText(
+                    kind: kind,
+                    text: text,
+                    presetName: presetName
+                )
+            }
+            .onChange(of: text.wrappedValue) { _, _ in
+                // Keep matching / clearing as the user types
+                updatePresetNameForCurrentText(
+                    kind: kind,
+                    text: text,
+                    presetName: presetName
+                )
             }
         }
     }
@@ -973,40 +1238,22 @@ struct PromptEditorView: View {
     // MARK: - Images section (per prompt)
 
     private var imagesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Images")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+        VStack(alignment: .leading, spacing: 12) {
 
-                Spacer()
+            Text("Images")
+                .font(.subheadline)
+                .fontWeight(.semibold)
 
-                Button {
-                    showingPromptImagePicker = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "photo.badge.plus")
-                        Text("Upload Image")
-                    }
-                    .font(.footnote)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(Color(.secondarySystemBackground))
-                    )
-                }
-            }
-
-            if prompt.images.isEmpty {
-                Text("No images attached yet.")
+            // --- Carousel ---
+            if promptBinding.wrappedValue.images.isEmpty {
+                Text("No images yet. Upload some!")
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(Array(prompt.images.enumerated()), id: \.element.id) { index, promptImage in
-                            if let uiImage = UIImage(data: promptImage.data) {
+                        ForEach(Array(promptBinding.wrappedValue.images.enumerated()), id: \.element.id) { index, img in
+                            if let uiImage = UIImage(data: img.data) {
                                 Image(uiImage: uiImage)
                                     .resizable()
                                     .scaledToFill()
@@ -1019,12 +1266,24 @@ struct PromptEditorView: View {
                             }
                         }
                     }
+                    .padding(.vertical, 4)
                 }
-
-                Text("Tap an image to view full-screen and swipe through all images for this prompt.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
             }
+
+            // --- Upload button BELOW the carousel ---
+            Button {
+                showingPromptImagePicker = true
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "plus.circle")
+                    Text("Add Images")
+                }
+                .font(.caption.weight(.medium))
+                .foregroundColor(.accentColor)
+                .padding(.top, 2)
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 }
@@ -1064,9 +1323,11 @@ struct GalleryView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") {
-                        dismiss()
+                // 🔹 Add the global keyboard toolbar
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        KeyboardHelper.dismiss()
                     }
                 }
             }

@@ -100,9 +100,15 @@ struct CharacterProfile: Identifiable, Codable, Equatable {
     var notes: String
     var prompts: [SavedPrompt]
 
-    // New: overview-level info
+    // Overview-level info
     var profileImageData: Data? = nil
     var links: [RelatedLink] = []
+
+    // 🔹 Per-character defaults for each section
+    var characterDefaults: [GlobalDefaultKey: String] = [:]
+
+    // 🔹 Per-character Perchance generator override (you already have this if generator is working)
+    var characterDefaultPerchanceGenerator: String? = nil
 }
 
 // MARK: - Prompt composition helpers & enums
@@ -147,7 +153,6 @@ final class PromptPresetStore: ObservableObject {
         }
     }
 
-    // ⬇️ ADD THIS
     init() {
         print("[PromptPresetStore] init() – in-memory defaultPerchanceGenerator = '\(defaultPerchanceGenerator)'")
 
@@ -193,7 +198,6 @@ final class PromptPresetStore: ObservableObject {
             .negative: "no text, no watermark, no extra limbs, no distortions"
         ]
     }
-    // ⬆️ END ADDED INIT
 
     func presets(of kind: PromptSectionKind) -> [PromptPreset] {
         presets.filter { $0.kind == kind }
@@ -221,22 +225,32 @@ enum PromptComposer {
         globalDefaults: [GlobalDefaultKey: String]
     ) -> String {
 
-        // Helper: Adds a section only if text exists
+        // Avoid unused-parameter warning
+        _ = stylePreset
+
+        // Helper: adds a section only if text exists
         func section(_ title: String, _ text: String?) -> String? {
             guard let raw = text?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !raw.isEmpty else { return nil }
             return "\(title):\n\(raw)"
         }
 
+        // Helper: character-level override for a key
+        func characterOverride(_ key: GlobalDefaultKey) -> String? {
+            character.characterDefaults[key]?.nonEmpty
+        }
+
         var output: [String] = []
 
-        // Character name
-        if !character.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            output.append("Name:\n\(character.name)")
+        // Name
+        let trimmedName = character.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedName.isEmpty {
+            output.append("Name:\n\(trimmedName)")
         }
-        
-        // physicalDescription
+
+        // Physical Description
         let physicalDescription = prompt.physicalDescription?.nonEmpty
+            ?? characterOverride(.physicalDescription)
             ?? globalDefaults[.physicalDescription]?.nonEmpty
         if let block = section("Physical Description", physicalDescription) {
             output.append(block)
@@ -244,6 +258,7 @@ enum PromptComposer {
 
         // Outfit
         let outfit = prompt.outfit?.nonEmpty
+            ?? characterOverride(.outfit)
             ?? globalDefaults[.outfit]?.nonEmpty
         if let block = section("Outfit", outfit) {
             output.append(block)
@@ -251,6 +266,7 @@ enum PromptComposer {
 
         // Pose
         let pose = prompt.pose?.nonEmpty
+            ?? characterOverride(.pose)
             ?? globalDefaults[.pose]?.nonEmpty
         if let block = section("Pose", pose) {
             output.append(block)
@@ -258,6 +274,7 @@ enum PromptComposer {
 
         // Environment
         let environment = prompt.environment?.nonEmpty
+            ?? characterOverride(.environment)
             ?? globalDefaults[.environment]?.nonEmpty
         if let block = section("Environment", environment) {
             output.append(block)
@@ -265,13 +282,15 @@ enum PromptComposer {
 
         // Lighting
         let lighting = prompt.lighting?.nonEmpty
+            ?? characterOverride(.lighting)
             ?? globalDefaults[.lighting]?.nonEmpty
         if let block = section("Lighting", lighting) {
             output.append(block)
         }
 
-        // Style
+        // Style Modifiers
         let style = prompt.styleModifiers?.nonEmpty
+            ?? characterOverride(.style)
             ?? globalDefaults[.style]?.nonEmpty
         if let block = section("Style Modifiers", style) {
             output.append(block)
@@ -279,6 +298,7 @@ enum PromptComposer {
 
         // Technical Modifiers
         let tech = prompt.technicalModifiers?.nonEmpty
+            ?? characterOverride(.technical)
             ?? globalDefaults[.technical]?.nonEmpty
         if let block = section("Technical Modifiers", tech) {
             output.append(block)
@@ -286,6 +306,7 @@ enum PromptComposer {
 
         // Negative Prompt
         let neg = prompt.negativePrompt?.nonEmpty
+            ?? characterOverride(.negative)
             ?? globalDefaults[.negative]?.nonEmpty
         if let neg = neg {
             let cleanNeg = neg.lowercased().hasPrefix("negative prompt")
@@ -294,7 +315,7 @@ enum PromptComposer {
             output.append(cleanNeg)
         }
 
-        // Additional Information
+        // Additional Information (doesn't use character/global defaults)
         if let block = section("Additional Information", prompt.additionalInfo) {
             output.append(block)
         }
@@ -312,6 +333,7 @@ extension String {
         return trimmed.isEmpty ? nil : trimmed
     }
 }
+
 extension CharacterProfile {
     static let sampleCharacters: [CharacterProfile] = [
         CharacterProfile(
