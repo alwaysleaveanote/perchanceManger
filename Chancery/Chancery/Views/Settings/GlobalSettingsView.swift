@@ -3,6 +3,9 @@ import SwiftUI
 struct GlobalSettingsView: View {
     @EnvironmentObject var presetStore: PromptPresetStore
     @EnvironmentObject var themeManager: ThemeManager
+    
+    /// Central data store for offline storage management
+    @ObservedObject private var dataStore = DataStore.shared
 
     @State private var selectedSection: PromptSectionKind = .physicalDescription
     @State private var customGeneratorName: String = ""
@@ -11,6 +14,7 @@ struct GlobalSettingsView: View {
     @AppStorage("globalSettings_isThemeExpanded") private var isThemeExpanded: Bool = false
     @AppStorage("globalSettings_isGeneratorExpanded") private var isGeneratorExpanded: Bool = false
     @AppStorage("globalSettings_isGlobalDefaultsExpanded") private var isGlobalDefaultsExpanded: Bool = false
+    @AppStorage("globalSettings_isOfflineStorageExpanded") private var isOfflineStorageExpanded: Bool = false
 
     // Preset editor state
     @State private var selectedPresetId: UUID? = nil
@@ -25,6 +29,9 @@ struct GlobalSettingsView: View {
     // Delete preset confirmation
     @State private var presetToDelete: PromptPreset? = nil
     @State private var showingDeletePresetConfirmation = false
+    
+    // Offline storage confirmation
+    @State private var showingDisableOfflineStorageConfirmation = false
 
     private var selectedGeneratorOption: PerchanceGeneratorOption? {
         perchanceGenerators.first(where: { $0.name == presetStore.defaultPerchanceGenerator }) ?? perchanceGenerators.first
@@ -42,6 +49,8 @@ struct GlobalSettingsView: View {
                     generatorSection
                     ThemedDivider().padding(.vertical, 8)
                     globalDefaultsSection
+                    ThemedDivider().padding(.vertical, 8)
+                    offlineStorageSection
                     Spacer(minLength: 0)
                 }
                 .padding()
@@ -112,6 +121,14 @@ struct GlobalSettingsView: View {
             } else {
                 Text("Are you sure you want to delete this preset?")
             }
+        }
+        .alert("Disable Offline Access?", isPresented: $showingDisableOfflineStorageConfirmation) {
+            Button("Disable", role: .destructive) {
+                dataStore.disableOfflineStorage()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Your data will remain safely stored in iCloud, but will no longer be available when you're offline. You can re-enable this anytime to download your data again.")
         }
     }
 
@@ -469,6 +486,261 @@ struct GlobalSettingsView: View {
                         .fill(theme.backgroundSecondary)
                 )
             }
+        }
+    }
+    
+    // MARK: - Offline Storage Section
+    
+    private var offlineStorageSection: some View {
+        let theme = themeManager.resolved
+        
+        return VStack(alignment: .leading, spacing: 8) {
+            Button(action: {
+                withAnimation {
+                    isOfflineStorageExpanded.toggle()
+                }
+            }) {
+                HStack {
+                    Text("Offline Access")
+                        .font(.title3)
+                        .bold()
+                        .fontDesign(theme.fontDesign)
+                        .foregroundColor(theme.textPrimary)
+
+                    Spacer()
+
+                    Image(systemName: isOfflineStorageExpanded ? "chevron.down" : "chevron.right")
+                        .font(.subheadline)
+                        .foregroundColor(theme.textSecondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if isOfflineStorageExpanded {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Keep a copy of your characters, prompts, and images stored on this device. This allows you to view and use your data even without an internet connection.")
+                        .font(.caption)
+                        .foregroundColor(theme.textSecondary)
+                    
+                    // Toggle row
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Store Data Locally")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundColor(theme.textPrimary)
+                            
+                            Text(dataStore.isOfflineStorageEnabled 
+                                 ? "Your data is available offline" 
+                                 : "Data requires internet connection")
+                                .font(.caption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+                        
+                        Spacer()
+                        
+                        if dataStore.isModifyingOfflineStorage {
+                            ProgressView()
+                                .tint(theme.primary)
+                        } else {
+                            Toggle("", isOn: Binding(
+                                get: { dataStore.isOfflineStorageEnabled },
+                                set: { newValue in
+                                    if newValue {
+                                        // Enable - download data
+                                        Task {
+                                            await dataStore.enableOfflineStorage()
+                                        }
+                                    } else {
+                                        // Disable - show confirmation first
+                                        showingDisableOfflineStorageConfirmation = true
+                                    }
+                                }
+                            ))
+                            .labelsHidden()
+                            .tint(theme.primary)
+                        }
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                            .fill(theme.backgroundTertiary)
+                    )
+                    
+                    // Info box
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "icloud.fill")
+                            .foregroundColor(theme.primary)
+                            .font(.subheadline)
+                        
+                        Text("Your data is always securely stored in iCloud. Offline access creates an additional local copy on this device.")
+                            .font(.caption)
+                            .foregroundColor(theme.textSecondary)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                            .fill(theme.primary.opacity(0.1))
+                    )
+                    
+                    // Storage usage section
+                    storageUsageView
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                        .fill(theme.backgroundSecondary)
+                )
+            }
+        }
+    }
+    
+    // MARK: - Storage Usage View
+    
+    private var storageUsageView: some View {
+        let theme = themeManager.resolved
+        let stats = dataStore.calculateStorageStats()
+        
+        return VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                Image(systemName: "internaldrive.fill")
+                    .foregroundColor(theme.primary)
+                    .font(.subheadline)
+                Text("Storage Usage")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(theme.textPrimary)
+            }
+            
+            // Data summary cards
+            HStack(spacing: 12) {
+                // Characters card
+                storageStatCard(
+                    icon: "person.3.fill",
+                    count: stats.characterCount,
+                    label: "Characters",
+                    theme: theme
+                )
+                
+                // Prompts card
+                storageStatCard(
+                    icon: "doc.text.fill",
+                    count: stats.promptCount,
+                    label: "Prompts",
+                    theme: theme
+                )
+                
+                // Images card
+                storageStatCard(
+                    icon: "photo.fill",
+                    count: stats.imageCount,
+                    label: "Images",
+                    theme: theme
+                )
+            }
+            
+            // Storage breakdown
+            VStack(spacing: 8) {
+                // Total storage bar
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Local Storage")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(theme.textPrimary)
+                        Spacer()
+                        Text(stats.formattedTotalSize)
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(theme.primary)
+                    }
+                    
+                    // Visual bar showing breakdown
+                    GeometryReader { geometry in
+                        let totalWidth = geometry.size.width
+                        let total = max(stats.totalLocalSize, 1) // Avoid division by zero
+                        let charWidth = CGFloat(stats.charactersSize) / CGFloat(total) * totalWidth
+                        let presetWidth = CGFloat(stats.presetsSize) / CGFloat(total) * totalWidth
+                        
+                        HStack(spacing: 2) {
+                            // Characters portion (includes images)
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(theme.primary)
+                                .frame(width: max(charWidth, stats.charactersSize > 0 ? 4 : 0))
+                            
+                            // Presets portion
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(theme.primary.opacity(0.6))
+                                .frame(width: max(presetWidth, stats.presetsSize > 0 ? 4 : 0))
+                            
+                            // Settings portion (remaining)
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(theme.primary.opacity(0.3))
+                        }
+                    }
+                    .frame(height: 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(theme.backgroundTertiary)
+                    )
+                }
+                
+                // Legend
+                HStack(spacing: 16) {
+                    storageLegendItem(
+                        color: theme.primary,
+                        label: "Characters & Images",
+                        size: stats.formattedCharactersSize,
+                        theme: theme
+                    )
+                    storageLegendItem(
+                        color: theme.primary.opacity(0.6),
+                        label: "Presets",
+                        size: stats.formattedPresetsSize,
+                        theme: theme
+                    )
+                }
+                .font(.caption2)
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                    .fill(theme.backgroundTertiary)
+            )
+        }
+        .padding(.top, 8)
+    }
+    
+    private func storageStatCard(icon: String, count: Int, label: String, theme: ResolvedTheme) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(theme.primary)
+            
+            Text("\(count)")
+                .font(.title2.weight(.bold))
+                .foregroundColor(theme.textPrimary)
+            
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                .fill(theme.backgroundTertiary)
+        )
+    }
+    
+    private func storageLegendItem(color: Color, label: String, size: String, theme: ResolvedTheme) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            Text(label)
+                .foregroundColor(theme.textSecondary)
+            Text("(\(size))")
+                .foregroundColor(theme.textSecondary.opacity(0.7))
         }
     }
 

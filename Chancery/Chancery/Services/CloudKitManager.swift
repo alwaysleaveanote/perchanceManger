@@ -89,12 +89,12 @@ final class CloudKitManager: ObservableObject {
     
     // MARK: - Properties
     
-    /// The CloudKit container for this app
-    private let container: CKContainer
+    /// The CloudKit container for this app (nil when CloudKit is disabled)
+    private var container: CKContainer?
     
     /// The private database for user data
-    private var privateDatabase: CKDatabase {
-        container.privateCloudDatabase
+    private var privateDatabase: CKDatabase? {
+        container?.privateCloudDatabase
     }
     
     /// Current sync status
@@ -104,7 +104,7 @@ final class CloudKitManager: ObservableObject {
     @Published private(set) var isAvailable: Bool = false
     
     /// Zone ID for custom zone
-    private let zoneID: CKRecordZone.ID
+    private var zoneID: CKRecordZone.ID?
     
     /// Subscription ID for change notifications
     private let subscriptionID = "chancery-changes"
@@ -112,7 +112,17 @@ final class CloudKitManager: ObservableObject {
     // MARK: - Initialization
     
     private init() {
-        // Use the default container based on bundle identifier
+        // Check feature flag FIRST before touching any CloudKit APIs
+        guard FeatureFlags.isCloudKitEnabled else {
+            Logger.info("CloudKitManager initialized (CloudKit DISABLED by feature flag)", category: .data)
+            self.container = nil
+            self.zoneID = nil
+            isAvailable = false
+            syncStatus = .disabled
+            return
+        }
+        
+        // Only initialize CloudKit when enabled
         self.container = CKContainer.default()
         self.zoneID = CKRecordZone.ID(zoneName: "ChanceryZone", ownerName: CKCurrentUserDefaultName)
         
@@ -128,6 +138,12 @@ final class CloudKitManager: ObservableObject {
     
     /// Checks if the user is signed into iCloud
     func checkAccountStatus() async {
+        // Check feature flag first
+        guard FeatureFlags.isCloudKitEnabled, let container = container else {
+            isAvailable = false
+            syncStatus = .disabled
+            return
+        }
         do {
             let status = try await container.accountStatus()
             
@@ -173,7 +189,7 @@ final class CloudKitManager: ObservableObject {
     
     /// Creates the custom zone and subscription for change notifications
     private func setupZoneAndSubscription() async {
-        guard isAvailable else { return }
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else { return }
         
         do {
             // Create custom zone
@@ -199,15 +215,16 @@ final class CloudKitManager: ObservableObject {
     // MARK: - Record ID Helpers
     
     /// Creates a CKRecord.ID for a given UUID and record type
-    private func recordID(for uuid: UUID, type: CloudKitRecordType) -> CKRecord.ID {
-        CKRecord.ID(recordName: "\(type.rawValue)_\(uuid.uuidString)", zoneID: zoneID)
+    private func recordID(for uuid: UUID, type: CloudKitRecordType) -> CKRecord.ID? {
+        guard let zoneID = zoneID else { return nil }
+        return CKRecord.ID(recordName: "\(type.rawValue)_\(uuid.uuidString)", zoneID: zoneID)
     }
     
     // MARK: - Character Operations
     
     /// Saves a character to CloudKit
     func saveCharacter(_ character: CharacterProfile) async throws {
-        guard isAvailable else {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
             throw CloudKitError.notAuthenticated
         }
         
@@ -226,7 +243,7 @@ final class CloudKitManager: ObservableObject {
     
     /// Fetches all characters from CloudKit
     func fetchAllCharacters() async throws -> [CharacterProfile] {
-        guard isAvailable else {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
             throw CloudKitError.notAuthenticated
         }
         
@@ -261,14 +278,12 @@ final class CloudKitManager: ObservableObject {
     
     /// Deletes a character from CloudKit
     func deleteCharacter(_ character: CharacterProfile) async throws {
-        guard isAvailable else {
+        guard isAvailable, let privateDatabase = privateDatabase, let recordID = recordID(for: character.id, type: .character) else {
             throw CloudKitError.notAuthenticated
         }
         
         syncStatus = .syncing
         defer { syncStatus = .idle }
-        
-        let recordID = recordID(for: character.id, type: .character)
         
         do {
             try await privateDatabase.deleteRecord(withID: recordID)
@@ -282,7 +297,7 @@ final class CloudKitManager: ObservableObject {
     
     /// Saves a preset to CloudKit
     func savePreset(_ preset: PromptPreset) async throws {
-        guard isAvailable else {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
             throw CloudKitError.notAuthenticated
         }
         
@@ -298,7 +313,7 @@ final class CloudKitManager: ObservableObject {
     
     /// Fetches all presets from CloudKit
     func fetchAllPresets() async throws -> [PromptPreset] {
-        guard isAvailable else {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
             throw CloudKitError.notAuthenticated
         }
         
@@ -329,11 +344,9 @@ final class CloudKitManager: ObservableObject {
     
     /// Deletes a preset from CloudKit
     func deletePreset(_ preset: PromptPreset) async throws {
-        guard isAvailable else {
+        guard isAvailable, let privateDatabase = privateDatabase, let recordID = recordID(for: preset.id, type: .promptPreset) else {
             throw CloudKitError.notAuthenticated
         }
-        
-        let recordID = recordID(for: preset.id, type: .promptPreset)
         
         do {
             try await privateDatabase.deleteRecord(withID: recordID)
@@ -347,7 +360,7 @@ final class CloudKitManager: ObservableObject {
     
     /// Saves global settings to CloudKit
     func saveGlobalSettings(defaults: [GlobalDefaultKey: String], generator: String) async throws {
-        guard isAvailable else {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
             throw CloudKitError.notAuthenticated
         }
         
@@ -371,7 +384,7 @@ final class CloudKitManager: ObservableObject {
     
     /// Fetches global settings from CloudKit
     func fetchGlobalSettings() async throws -> (defaults: [GlobalDefaultKey: String], generator: String)? {
-        guard isAvailable else {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
             throw CloudKitError.notAuthenticated
         }
         
@@ -404,7 +417,7 @@ final class CloudKitManager: ObservableObject {
     
     /// Saves multiple characters in a batch
     func saveCharacters(_ characters: [CharacterProfile]) async throws {
-        guard isAvailable else {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
             throw CloudKitError.notAuthenticated
         }
         
@@ -431,7 +444,7 @@ final class CloudKitManager: ObservableObject {
     
     /// Saves multiple presets in a batch
     func savePresets(_ presets: [PromptPreset]) async throws {
-        guard isAvailable else {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
             throw CloudKitError.notAuthenticated
         }
         

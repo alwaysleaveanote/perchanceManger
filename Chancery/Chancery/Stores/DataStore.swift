@@ -53,6 +53,9 @@ final class DataStore: ObservableObject {
     /// Default Perchance generator
     @Published var defaultPerchanceGenerator: String = "ai-vibrant-image-generator"
     
+    /// Whether offline storage is enabled (stores data locally for offline access)
+    @Published var isOfflineStorageEnabled: Bool = true
+    
     /// Current sync status
     @Published private(set) var syncStatus: CloudKitSyncStatus = .idle
     
@@ -61,6 +64,9 @@ final class DataStore: ObservableObject {
     
     /// Last sync date
     @Published private(set) var lastSyncDate: Date?
+    
+    /// Whether offline storage is currently being modified
+    @Published private(set) var isModifyingOfflineStorage: Bool = false
     
     // MARK: - Private Properties
     
@@ -133,10 +139,12 @@ final class DataStore: ObservableObject {
            let loaded = try? decoder.decode(SettingsData.self, from: data) {
             globalDefaults = loaded.globalDefaults
             defaultPerchanceGenerator = loaded.defaultGenerator
+            isOfflineStorageEnabled = loaded.isOfflineStorageEnabled ?? true
             Logger.debug("Loaded settings from local storage", category: .data)
         } else {
             // Use sample defaults if none saved
             globalDefaults = PromptPresetStore.sampleDefaults
+            isOfflineStorageEnabled = true
             Logger.debug("Using sample defaults", category: .data)
         }
         
@@ -145,6 +153,12 @@ final class DataStore: ObservableObject {
     
     /// Saves all data to local storage
     private func saveLocalData() {
+        guard isOfflineStorageEnabled else {
+            // Only save settings when offline storage is disabled
+            saveSettingsOnly()
+            return
+        }
+        
         Logger.debug("Saving local data", category: .data)
         
         let encoder = JSONEncoder()
@@ -161,9 +175,18 @@ final class DataStore: ObservableObject {
         }
         
         // Save settings
+        saveSettingsOnly()
+    }
+    
+    /// Saves only the settings file (used when offline storage is disabled)
+    private func saveSettingsOnly() {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        
         let settings = SettingsData(
             globalDefaults: globalDefaults,
-            defaultGenerator: defaultPerchanceGenerator
+            defaultGenerator: defaultPerchanceGenerator,
+            isOfflineStorageEnabled: isOfflineStorageEnabled
         )
         if let data = try? encoder.encode(settings) {
             try? data.write(to: settingsFileURL)
@@ -403,6 +426,135 @@ final class DataStore: ObservableObject {
         Logger.info("Generator changed to: \(trimmed)", category: .data)
     }
     
+    // MARK: - Offline Storage Management
+    
+    /// Enables offline storage and downloads all data from CloudKit
+    func enableOfflineStorage() async {
+        guard !isOfflineStorageEnabled else { return }
+        
+        isModifyingOfflineStorage = true
+        defer { isModifyingOfflineStorage = false }
+        
+        Logger.info("Enabling offline storage", category: .data)
+        
+        isOfflineStorageEnabled = true
+        saveSettingsOnly()
+        
+        // Sync with cloud to download all data
+        await syncWithCloud()
+        
+        // Save all data locally
+        saveLocalData()
+        
+        Logger.info("Offline storage enabled and data downloaded", category: .data)
+    }
+    
+    /// Disables offline storage and purges local data files
+    func disableOfflineStorage() {
+        guard isOfflineStorageEnabled else { return }
+        
+        isModifyingOfflineStorage = true
+        defer { isModifyingOfflineStorage = false }
+        
+        Logger.info("Disabling offline storage", category: .data)
+        
+        isOfflineStorageEnabled = false
+        
+        // Remove local data files (but keep settings)
+        purgeLocalDataFiles()
+        
+        // Save the updated settings
+        saveSettingsOnly()
+        
+        Logger.info("Offline storage disabled and local data purged", category: .data)
+    }
+    
+    /// Removes local data files (characters and presets) but keeps settings
+    private func purgeLocalDataFiles() {
+        let fileManager = FileManager.default
+        
+        // Remove characters file
+        if fileManager.fileExists(atPath: charactersFileURL.path) {
+            try? fileManager.removeItem(at: charactersFileURL)
+            Logger.debug("Removed local characters file", category: .data)
+        }
+        
+        // Remove presets file
+        if fileManager.fileExists(atPath: presetsFileURL.path) {
+            try? fileManager.removeItem(at: presetsFileURL)
+            Logger.debug("Removed local presets file", category: .data)
+        }
+    }
+    
+    // MARK: - Storage Statistics
+    
+    /// Represents storage usage statistics
+    struct StorageStats {
+        let charactersSize: Int64
+        let presetsSize: Int64
+        let settingsSize: Int64
+        let totalLocalSize: Int64
+        let characterCount: Int
+        let promptCount: Int
+        let imageCount: Int
+        let presetCount: Int
+        
+        var formattedTotalSize: String {
+            ByteCountFormatter.string(fromByteCount: totalLocalSize, countStyle: .file)
+        }
+        
+        var formattedCharactersSize: String {
+            ByteCountFormatter.string(fromByteCount: charactersSize, countStyle: .file)
+        }
+        
+        var formattedPresetsSize: String {
+            ByteCountFormatter.string(fromByteCount: presetsSize, countStyle: .file)
+        }
+        
+        var formattedSettingsSize: String {
+            ByteCountFormatter.string(fromByteCount: settingsSize, countStyle: .file)
+        }
+    }
+    
+    /// Calculates current storage usage
+    func calculateStorageStats() -> StorageStats {
+        let fileManager = FileManager.default
+        
+        // Get file sizes
+        let charactersSize = fileSize(at: charactersFileURL)
+        let presetsSize = fileSize(at: presetsFileURL)
+        let settingsSize = fileSize(at: settingsFileURL)
+        let totalLocalSize = charactersSize + presetsSize + settingsSize
+        
+        // Count items
+        let characterCount = characters.count
+        let promptCount = characters.reduce(0) { $0 + $1.prompts.count }
+        let imageCount = characters.reduce(0) { total, char in
+            total + char.prompts.reduce(0) { $0 + $1.images.count }
+        }
+        let presetCount = presets.count
+        
+        return StorageStats(
+            charactersSize: charactersSize,
+            presetsSize: presetsSize,
+            settingsSize: settingsSize,
+            totalLocalSize: totalLocalSize,
+            characterCount: characterCount,
+            promptCount: promptCount,
+            imageCount: imageCount,
+            presetCount: presetCount
+        )
+    }
+    
+    /// Gets the file size at a URL, returns 0 if file doesn't exist
+    private func fileSize(at url: URL) -> Int64 {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let size = attributes[.size] as? Int64 else {
+            return 0
+        }
+        return size
+    }
+    
     // MARK: - Force Sync
     
     /// Forces a full sync with CloudKit
@@ -435,5 +587,12 @@ final class DataStore: ObservableObject {
 private struct SettingsData: Codable {
     let globalDefaults: [GlobalDefaultKey: String]
     let defaultGenerator: String
+    let isOfflineStorageEnabled: Bool?
+    
+    init(globalDefaults: [GlobalDefaultKey: String], defaultGenerator: String, isOfflineStorageEnabled: Bool = true) {
+        self.globalDefaults = globalDefaults
+        self.defaultGenerator = defaultGenerator
+        self.isOfflineStorageEnabled = isOfflineStorageEnabled
+    }
 }
 

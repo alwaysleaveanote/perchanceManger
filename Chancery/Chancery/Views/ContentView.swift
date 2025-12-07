@@ -67,7 +67,7 @@ struct ContentView: View {
     @StateObject private var presetStore = PromptPresetStore()
     
     /// Central data store for characters and CloudKit sync
-    @StateObject private var dataStore = DataStore.shared
+    @ObservedObject private var dataStore = DataStore.shared
     
     /// The current scratchpad prompt text (legacy - not synced)
     @State private var scratchpadPrompt: String = ""
