@@ -224,8 +224,8 @@ struct ScratchpadView: View {
                 AddScratchToCharacterSheet(
                     characters: characters,
                     title: $addToCharacterTitle,
-                    onAdd: { characterId, title in
-                        addCurrentScratch(to: characterId, withTitle: title)
+                    onAddToMultiple: { characterIds, title in
+                        addCurrentScratchToMultiple(characterIds: characterIds, withTitle: title)
                     },
                     onCreateNewCharacter: { newCharacter, promptTitle in
                         createCharacterAndAddPrompt(newCharacter, promptTitle: promptTitle)
@@ -792,40 +792,54 @@ struct ScratchpadView: View {
         scratchpadSaved.insert(saved, at: 0)
     }
 
-    private func addCurrentScratch(
-        to characterId: CharacterProfile.ID,
+    private func addCurrentScratchToMultiple(
+        characterIds: [CharacterProfile.ID],
         withTitle title: String
     ) {
         let full = composedScratchPrompt
-
-        let newPrompt = SavedPrompt(
-            title: title,
-            text: full,
-            physicalDescription: physicalDescription.nonEmpty,
-            outfit: outfit.nonEmpty,
-            pose: pose.nonEmpty,
-            environment: environment.nonEmpty,
-            lighting: lighting.nonEmpty,
-            styleModifiers: styleModifiers.nonEmpty,
-            technicalModifiers: technicalModifiers.nonEmpty,
-            negativePrompt: negativePrompt.nonEmpty,
-            additionalInfo: additionalInfo.nonEmpty,
-            physicalDescriptionPresetName: physicalPresetName,
-            outfitPresetName: outfitPresetName,
-            posePresetName: posePresetName,
-            environmentPresetName: environmentPresetName,
-            lightingPresetName: lightingPresetName,
-            stylePresetName: stylePresetName,
-            technicalPresetName: technicalPresetName,
-            negativePresetName: negativePresetName
-        )
-
-        guard let index = characters.firstIndex(where: { $0.id == characterId }) else { return }
-        characters[index].prompts.append(newPrompt)
         
-        // Navigate to the newly added prompt
-        if let callback = onNavigateToPrompt {
-            callback(characterId, newPrompt.id)
+        // Track the first character/prompt for navigation
+        var firstCharacterId: CharacterProfile.ID?
+        var firstPromptId: UUID?
+        
+        for characterId in characterIds {
+            let newPrompt = SavedPrompt(
+                title: title,
+                text: full,
+                physicalDescription: physicalDescription.nonEmpty,
+                outfit: outfit.nonEmpty,
+                pose: pose.nonEmpty,
+                environment: environment.nonEmpty,
+                lighting: lighting.nonEmpty,
+                styleModifiers: styleModifiers.nonEmpty,
+                technicalModifiers: technicalModifiers.nonEmpty,
+                negativePrompt: negativePrompt.nonEmpty,
+                additionalInfo: additionalInfo.nonEmpty,
+                physicalDescriptionPresetName: physicalPresetName,
+                outfitPresetName: outfitPresetName,
+                posePresetName: posePresetName,
+                environmentPresetName: environmentPresetName,
+                lightingPresetName: lightingPresetName,
+                stylePresetName: stylePresetName,
+                technicalPresetName: technicalPresetName,
+                negativePresetName: negativePresetName
+            )
+            
+            guard let index = characters.firstIndex(where: { $0.id == characterId }) else { continue }
+            characters[index].prompts.append(newPrompt)
+            
+            // Track first one for navigation
+            if firstCharacterId == nil {
+                firstCharacterId = characterId
+                firstPromptId = newPrompt.id
+            }
+        }
+        
+        // Navigate to the first added prompt
+        if let callback = onNavigateToPrompt,
+           let charId = firstCharacterId,
+           let promptId = firstPromptId {
+            callback(charId, promptId)
         }
     }
     

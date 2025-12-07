@@ -20,6 +20,7 @@ enum CloudKitRecordType: String {
     case promptPreset = "PromptPreset"
     case relatedLink = "RelatedLink"
     case globalSettings = "GlobalSettings"
+    case scratchpadBookmark = "ScratchpadBookmark"
 }
 
 // MARK: - CloudKit Error
@@ -353,6 +354,85 @@ final class CloudKitManager: ObservableObject {
             Logger.debug("Deleted preset: \(preset.name)", category: .data)
         } catch let error as CKError {
             throw mapCKError(error)
+        }
+    }
+    
+    // MARK: - Scratchpad Bookmark Operations
+    
+    /// Saves a scratchpad bookmark to CloudKit
+    func saveScratchpadBookmark(_ prompt: SavedPrompt) async throws {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
+            throw CloudKitError.notAuthenticated
+        }
+        
+        let recordID = CKRecord.ID(recordName: "ScratchpadBookmark_\(prompt.id.uuidString)", zoneID: zoneID)
+        let record = CKRecord(recordType: CloudKitRecordType.scratchpadBookmark.rawValue, recordID: recordID)
+        
+        // Encode the entire SavedPrompt as JSON
+        let encoder = JSONEncoder()
+        if let promptData = try? encoder.encode(prompt) {
+            record["promptData"] = String(data: promptData, encoding: .utf8)
+        }
+        
+        do {
+            _ = try await privateDatabase.save(record)
+            Logger.debug("Saved scratchpad bookmark", category: .data)
+        } catch let error as CKError {
+            throw mapCKError(error)
+        }
+    }
+    
+    /// Fetches all scratchpad bookmarks from CloudKit
+    func fetchAllScratchpadBookmarks() async throws -> [SavedPrompt] {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
+            throw CloudKitError.notAuthenticated
+        }
+        
+        let query = CKQuery(recordType: CloudKitRecordType.scratchpadBookmark.rawValue, predicate: NSPredicate(value: true))
+        
+        do {
+            let (results, _) = try await privateDatabase.records(matching: query, inZoneWith: zoneID)
+            
+            var bookmarks: [SavedPrompt] = []
+            let decoder = JSONDecoder()
+            
+            for (_, result) in results {
+                switch result {
+                case .success(let record):
+                    if let promptDataString = record["promptData"] as? String,
+                       let promptData = promptDataString.data(using: .utf8),
+                       let prompt = try? decoder.decode(SavedPrompt.self, from: promptData) {
+                        bookmarks.append(prompt)
+                    }
+                case .failure(let error):
+                    Logger.warning("Failed to fetch scratchpad bookmark record: \(error)", category: .data)
+                }
+            }
+            
+            Logger.info("Fetched \(bookmarks.count) scratchpad bookmarks", category: .data)
+            return bookmarks
+            
+        } catch let error as CKError {
+            throw mapCKError(error)
+        }
+    }
+    
+    /// Deletes a scratchpad bookmark from CloudKit
+    func deleteScratchpadBookmark(_ prompt: SavedPrompt) async throws {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
+            throw CloudKitError.notAuthenticated
+        }
+        
+        let recordID = CKRecord.ID(recordName: "ScratchpadBookmark_\(prompt.id.uuidString)", zoneID: zoneID)
+        
+        do {
+            try await privateDatabase.deleteRecord(withID: recordID)
+            Logger.debug("Deleted scratchpad bookmark", category: .data)
+        } catch let error as CKError {
+            // Ignore record not found errors (already deleted)
+            if error.code != .unknownItem {
+                throw mapCKError(error)
+            }
         }
     }
     

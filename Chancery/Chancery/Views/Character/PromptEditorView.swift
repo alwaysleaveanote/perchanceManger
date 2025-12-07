@@ -13,6 +13,9 @@ struct PromptEditorView: View {
     @State private var showingDuplicateAlert: Bool = false
     @State private var duplicatePromptName: String = ""
     @State private var showingClearConfirm: Bool = false
+    @State private var showingAddToOtherCharacters: Bool = false
+    @State private var showAddedToast: Bool = false
+    @State private var addedToCharacterCount: Int = 0
 
     @EnvironmentObject var presetStore: PromptPresetStore
     @EnvironmentObject var themeManager: ThemeManager
@@ -241,6 +244,88 @@ struct PromptEditorView: View {
         } message: {
             Text("Save the current text as a reusable preset for this section.")
         }
+        .sheet(isPresented: $showingAddToOtherCharacters) {
+            MultiCharacterPickerSheet(
+                characters: DataStore.shared.characters,
+                prompt: prompt,
+                onComplete: { selectedCharacters in
+                    // Add prompt to selected characters
+                    for targetCharacter in selectedCharacters {
+                        // Create a copy of the prompt with new ID
+                        let newPrompt = SavedPrompt(
+                            title: prompt.title,
+                            text: prompt.text,
+                            physicalDescription: prompt.physicalDescription,
+                            outfit: prompt.outfit,
+                            pose: prompt.pose,
+                            environment: prompt.environment,
+                            lighting: prompt.lighting,
+                            styleModifiers: prompt.styleModifiers,
+                            technicalModifiers: prompt.technicalModifiers,
+                            negativePrompt: prompt.negativePrompt,
+                            additionalInfo: prompt.additionalInfo,
+                            physicalDescriptionPresetName: prompt.physicalDescriptionPresetName,
+                            outfitPresetName: prompt.outfitPresetName,
+                            posePresetName: prompt.posePresetName,
+                            environmentPresetName: prompt.environmentPresetName,
+                            lightingPresetName: prompt.lightingPresetName,
+                            stylePresetName: prompt.stylePresetName,
+                            technicalPresetName: prompt.technicalPresetName,
+                            negativePresetName: prompt.negativePresetName,
+                            images: [] // Don't copy images
+                        )
+                        
+                        // Find and update the character
+                        if let index = DataStore.shared.characters.firstIndex(where: { $0.id == targetCharacter.id }) {
+                            var updatedCharacter = DataStore.shared.characters[index]
+                            updatedCharacter.prompts.append(newPrompt)
+                            DataStore.shared.updateCharacter(updatedCharacter)
+                        }
+                    }
+                    
+                    // Show toast
+                    addedToCharacterCount = selectedCharacters.count
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showAddedToast = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showAddedToast = false
+                        }
+                    }
+                },
+                excludeCharacterId: character.id
+            )
+            .environmentObject(themeManager)
+        }
+        .overlay(alignment: .top) {
+            if showAddedToast {
+                addedToastView
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+    }
+    
+    // MARK: - Added Toast
+    
+    private var addedToastView: some View {
+        let theme = characterTheme
+        
+        return HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(theme.textOnPrimary)
+            Text("Added to \(addedToCharacterCount) character\(addedToCharacterCount == 1 ? "" : "s")")
+                .font(.subheadline.weight(.medium))
+                .fontDesign(theme.fontDesign)
+                .foregroundColor(theme.textOnPrimary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(theme.success)
+        )
+        .padding(.top, 8)
     }
     
     // MARK: - Quick Actions Bar
@@ -305,26 +390,54 @@ struct PromptEditorView: View {
                 }
             }
             
-            // Duplicate button - secondary action
-            Button {
-                duplicatePromptName = "\(prompt.title) (Copy)"
-                showingDuplicateAlert = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus.square.on.square")
-                        .font(.system(size: 16, weight: .medium))
-                    Text("Duplicate Prompt")
-                        .font(.subheadline.weight(.medium))
+            // Secondary actions row - styled as subtle but intentional actions
+            HStack(spacing: 12) {
+                // Duplicate button - uses success color to indicate positive action
+                Button {
+                    duplicatePromptName = "\(prompt.title) (Copy)"
+                    showingDuplicateAlert = true
+                } label: {
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(theme.success.opacity(0.15))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "plus.square.on.square")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(theme.success)
+                        }
+                        Text("Duplicate")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(theme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(theme.backgroundTertiary)
+                    .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusMedium))
                 }
-                .foregroundColor(theme.primary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(theme.backgroundTertiary)
-                .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusMedium))
-                .overlay(
-                    RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                        .stroke(theme.primary.opacity(0.3), lineWidth: 1)
-                )
+                
+                // Add to Other Characters button - uses primary color for sharing action
+                Button {
+                    showingAddToOtherCharacters = true
+                } label: {
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(theme.primary.opacity(0.15))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "person.2.badge.plus")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(theme.primary)
+                        }
+                        Text("Add to Others")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(theme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(theme.backgroundTertiary)
+                    .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusMedium))
+                }
             }
         }
         .padding(16)

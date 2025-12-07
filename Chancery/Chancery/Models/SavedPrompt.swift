@@ -226,6 +226,47 @@ extension SavedPrompt {
     var imageCount: Int {
         images.count
     }
+    
+    /// Generates a human-readable summary of the prompt content
+    /// Used as an automatic title for bookmarked scratches
+    var autoSummary: String {
+        // Priority order: physical description, environment, pose, outfit, style
+        let summaryParts: [String] = [
+            physicalDescription,
+            environment,
+            pose,
+            outfit,
+            styleModifiers
+        ].compactMap { $0?.nonEmpty }
+        
+        if summaryParts.isEmpty {
+            // Fallback to composed prompt or generic title
+            let composed = composedPrompt
+            if composed.isEmpty {
+                return "Untitled Prompt"
+            }
+            // Take first 80 chars of composed prompt
+            return String(composed.prefix(80)) + (composed.count > 80 ? "..." : "")
+        }
+        
+        // Build a natural summary from the first 2-3 meaningful parts
+        let firstPart = summaryParts[0]
+        
+        // Truncate to reasonable length (max ~80 chars for 2 lines)
+        if firstPart.count > 80 {
+            return String(firstPart.prefix(77)) + "..."
+        }
+        
+        // Try to add second part if there's room
+        if summaryParts.count > 1 {
+            let combined = "\(firstPart), \(summaryParts[1])"
+            if combined.count <= 80 {
+                return combined
+            }
+        }
+        
+        return firstPart
+    }
 }
 
 // MARK: - Section Access

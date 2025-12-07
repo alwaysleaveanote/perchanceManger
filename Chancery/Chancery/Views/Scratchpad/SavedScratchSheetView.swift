@@ -7,11 +7,29 @@ struct SavedScratchSheetView: View {
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var presetStore: PromptPresetStore
     
     @State private var promptToDelete: SavedPrompt? = nil
     @State private var showingDeleteConfirmation = false
     @State private var showingClearAllConfirmation = false
     @State private var searchText = ""
+    @State private var expandedPromptIds: Set<UUID> = []
+    
+    /// Composes a prompt using PromptComposer to include global defaults
+    private func composedPromptWithDefaults(_ prompt: SavedPrompt) -> String {
+        let scratchCharacter = CharacterProfile(
+            name: "",
+            bio: "",
+            notes: "",
+            prompts: []
+        )
+        return PromptComposer.composePrompt(
+            character: scratchCharacter,
+            prompt: prompt,
+            stylePreset: nil,
+            globalDefaults: presetStore.globalDefaults
+        )
+    }
     
     private var filteredPrompts: [SavedPrompt] {
         if searchText.isEmpty {
@@ -19,8 +37,8 @@ struct SavedScratchSheetView: View {
         }
         let lowercasedSearch = searchText.lowercased()
         return scratchpadSaved.filter { prompt in
-            prompt.title.lowercased().contains(lowercasedSearch) ||
-            prompt.text.lowercased().contains(lowercasedSearch)
+            prompt.autoSummary.lowercased().contains(lowercasedSearch) ||
+            prompt.composedPrompt.lowercased().contains(lowercasedSearch)
         }
     }
 
@@ -64,24 +82,8 @@ struct SavedScratchSheetView: View {
                             .fontDesign(theme.fontDesign)
                     } else {
                         ForEach(filteredPrompts) { prompt in
-                            VStack(alignment: .leading) {
-                                Text(prompt.title)
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .fontDesign(theme.fontDesign)
-                                    .foregroundColor(theme.textPrimary)
-                                Text(prompt.text)
-                                    .font(.caption)
-                                    .fontDesign(theme.fontDesign)
-                                    .lineLimit(3)
-                                    .foregroundColor(theme.textSecondary)
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                onSelect(prompt)
-                                dismiss()
-                            }
-                            .listRowBackground(theme.backgroundSecondary)
+                            promptRow(prompt: prompt, theme: theme)
+                                .listRowBackground(theme.backgroundSecondary)
                         }
                         .onDelete { indices in
                             // Map filtered index back to original array
@@ -130,7 +132,7 @@ struct SavedScratchSheetView: View {
                 }
             } message: {
                 if let prompt = promptToDelete {
-                    Text("Are you sure you want to delete \"\(prompt.title)\"?")
+                    Text("Are you sure you want to delete \"\(prompt.autoSummary)\"?")
                 } else {
                     Text("Are you sure you want to delete this bookmark?")
                 }
@@ -142,6 +144,86 @@ struct SavedScratchSheetView: View {
                 Button("Cancel", role: .cancel) { }
             } message: {
                 Text("Are you sure you want to delete all \(scratchpadSaved.count) bookmarked scratches? This cannot be undone.")
+            }
+        }
+    }
+    
+    // MARK: - Prompt Row
+    
+    private func promptRow(prompt: SavedPrompt, theme: ResolvedTheme) -> some View {
+        let isExpanded = expandedPromptIds.contains(prompt.id)
+        let fullPrompt = composedPromptWithDefaults(prompt)
+        
+        return VStack(alignment: .leading, spacing: 8) {
+            // Header row with title and expand button
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    // Auto-generated summary as title (max 2 lines) - tappable to load prompt
+                    Button {
+                        onSelect(prompt)
+                        dismiss()
+                    } label: {
+                        Text(prompt.autoSummary)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .fontDesign(theme.fontDesign)
+                            .foregroundColor(theme.primary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    // Preview of prompt (collapsed state) - uses composed prompt with defaults
+                    if !isExpanded {
+                        Text(fullPrompt)
+                            .font(.caption)
+                            .fontDesign(theme.fontDesign)
+                            .lineLimit(2)
+                            .foregroundColor(theme.textSecondary)
+                    }
+                }
+                
+                Spacer()
+                
+                // Expand/collapse button
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        if isExpanded {
+                            expandedPromptIds.remove(prompt.id)
+                        } else {
+                            expandedPromptIds.insert(prompt.id)
+                        }
+                    }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
+                        .font(.system(size: 20))
+                        .foregroundColor(theme.primary)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Expanded content - full prompt (matches PromptPreviewSection styling exactly)
+            if isExpanded {
+                // Prompt preview container - same styling as PromptPreviewSection
+                ZStack {
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .fill(theme.backgroundTertiary)
+                    
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .stroke(theme.border.opacity(0.3), lineWidth: 1)
+                    
+                    ScrollView {
+                        Text(fullPrompt)
+                            .font(.footnote)
+                            .fontDesign(theme.fontDesign)
+                            .foregroundColor(theme.textSecondary)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(12)
+                            .textSelection(.enabled)
+                    }
+                }
+                .frame(maxHeight: 300) // Taller expanded view
             }
         }
     }

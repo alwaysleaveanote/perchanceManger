@@ -47,6 +47,9 @@ final class DataStore: ObservableObject {
     /// All prompt presets
     @Published var presets: [PromptPreset] = []
     
+    /// Saved scratchpad prompts (bookmarks)
+    @Published var scratchpadSaved: [SavedPrompt] = []
+    
     /// Global default values for prompt sections
     @Published var globalDefaults: [GlobalDefaultKey: String] = [:]
     
@@ -89,6 +92,10 @@ final class DataStore: ObservableObject {
     
     private var settingsFileURL: URL {
         documentsDirectory.appendingPathComponent("settings.json")
+    }
+    
+    private var scratchpadSavedFileURL: URL {
+        documentsDirectory.appendingPathComponent("scratchpad_saved.json")
     }
     
     // MARK: - Initialization
@@ -152,6 +159,13 @@ final class DataStore: ObservableObject {
             Logger.debug("Using sample defaults", category: .data)
         }
         
+        // Load scratchpad saved prompts
+        if let data = try? Data(contentsOf: scratchpadSavedFileURL),
+           let loaded = try? decoder.decode([SavedPrompt].self, from: data) {
+            scratchpadSaved = loaded
+            Logger.info("Loaded \(loaded.count) scratchpad bookmarks from local storage", category: .data)
+        }
+        
         isLoaded = true
     }
     
@@ -176,6 +190,11 @@ final class DataStore: ObservableObject {
         // Save presets
         if let data = try? encoder.encode(presets) {
             try? data.write(to: presetsFileURL)
+        }
+        
+        // Save scratchpad saved prompts
+        if let data = try? encoder.encode(scratchpadSaved) {
+            try? data.write(to: scratchpadSavedFileURL)
         }
         
         // Save settings
@@ -237,6 +256,12 @@ final class DataStore: ObservableObject {
                 defaultPerchanceGenerator = settings.generator
             }
             
+            // Fetch scratchpad bookmarks
+            let cloudBookmarks = try await cloudKit.fetchAllScratchpadBookmarks()
+            if !cloudBookmarks.isEmpty {
+                mergeScratchpadBookmarks(cloudBookmarks)
+            }
+            
             // Save merged data locally
             saveLocalData()
             
@@ -246,6 +271,23 @@ final class DataStore: ObservableObject {
         } catch {
             Logger.error("CloudKit sync failed: \(error)", category: .data)
         }
+    }
+    
+    /// Merges cloud scratchpad bookmarks with local, preferring cloud versions
+    private func mergeScratchpadBookmarks(_ cloudBookmarks: [SavedPrompt]) {
+        var merged = scratchpadSaved
+        
+        for cloudBookmark in cloudBookmarks {
+            if let index = merged.firstIndex(where: { $0.id == cloudBookmark.id }) {
+                // Update existing
+                merged[index] = cloudBookmark
+            } else {
+                // Add new
+                merged.append(cloudBookmark)
+            }
+        }
+        
+        scratchpadSaved = merged
     }
     
     /// Merges cloud characters with local, preferring cloud versions
@@ -386,6 +428,59 @@ final class DataStore: ObservableObject {
         }
         
         Logger.debug("Deleted preset: \(preset.name)", category: .data)
+    }
+    
+    // MARK: - Scratchpad Saved Prompts Operations
+    
+    /// Adds a saved scratchpad prompt (bookmark)
+    func addScratchpadBookmark(_ prompt: SavedPrompt) {
+        scratchpadSaved.insert(prompt, at: 0)
+        scheduleSave()
+        
+        Task {
+            try? await cloudKit.saveScratchpadBookmark(prompt)
+        }
+        
+        Logger.debug("Added scratchpad bookmark: \(prompt.autoSummary)", category: .data)
+    }
+    
+    /// Updates a saved scratchpad prompt
+    func updateScratchpadBookmark(_ prompt: SavedPrompt) {
+        if let index = scratchpadSaved.firstIndex(where: { $0.id == prompt.id }) {
+            scratchpadSaved[index] = prompt
+            scheduleSave()
+            
+            Task {
+                try? await cloudKit.saveScratchpadBookmark(prompt)
+            }
+        }
+    }
+    
+    /// Deletes a saved scratchpad prompt
+    func deleteScratchpadBookmark(_ prompt: SavedPrompt) {
+        scratchpadSaved.removeAll { $0.id == prompt.id }
+        scheduleSave()
+        
+        Task {
+            try? await cloudKit.deleteScratchpadBookmark(prompt)
+        }
+        
+        Logger.debug("Deleted scratchpad bookmark", category: .data)
+    }
+    
+    /// Clears all scratchpad bookmarks
+    func clearAllScratchpadBookmarks() {
+        let bookmarksToDelete = scratchpadSaved
+        scratchpadSaved.removeAll()
+        scheduleSave()
+        
+        Task {
+            for bookmark in bookmarksToDelete {
+                try? await cloudKit.deleteScratchpadBookmark(bookmark)
+            }
+        }
+        
+        Logger.debug("Cleared all scratchpad bookmarks", category: .data)
     }
     
     /// Resets presets to sample defaults

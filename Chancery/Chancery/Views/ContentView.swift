@@ -75,8 +75,28 @@ struct ContentView: View {
     /// The current scratchpad prompt text (legacy - not synced)
     @State private var scratchpadPrompt: String = ""
     
-    /// Saved scratchpad prompts (not synced per user request)
-    @State private var scratchpadSaved: [SavedPrompt] = []
+    /// Binding to scratchpad saved prompts in DataStore (synced to cloud)
+    private var scratchpadSaved: Binding<[SavedPrompt]> {
+        Binding(
+            get: { dataStore.scratchpadSaved },
+            set: { newValue in
+                // Handle array changes
+                for prompt in newValue {
+                    if !dataStore.scratchpadSaved.contains(where: { $0.id == prompt.id }) {
+                        dataStore.addScratchpadBookmark(prompt)
+                    } else {
+                        dataStore.updateScratchpadBookmark(prompt)
+                    }
+                }
+                // Handle deletions
+                for existing in dataStore.scratchpadSaved {
+                    if !newValue.contains(where: { $0.id == existing.id }) {
+                        dataStore.deleteScratchpadBookmark(existing)
+                    }
+                }
+            }
+        )
+    }
     
     /// Currently selected tab
     @State private var selectedTab: Tab = .home
@@ -176,7 +196,7 @@ struct ContentView: View {
     private var scratchpadTab: some View {
         ScratchpadView(
             scratchpadPrompt: $scratchpadPrompt,
-            scratchpadSaved: $scratchpadSaved,
+            scratchpadSaved: scratchpadSaved,
             characters: characters,
             openGenerator: openGenerator,
             onNavigateToPrompt: { characterId, promptId in

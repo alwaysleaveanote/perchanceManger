@@ -17,6 +17,7 @@ struct HomeView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showImageGallery = false
     @State private var selectedImageIndex: Int? = nil
+    @State private var showAppTour = false
     
     // MARK: - Computed Properties
     
@@ -121,6 +122,10 @@ struct HomeView: View {
             .navigationBarHidden(true)
         }
         .navigationViewStyle(.stack)
+        .fullScreenCover(isPresented: $showAppTour) {
+            AppTourView()
+                .environmentObject(themeManager)
+        }
         .sheet(isPresented: $showImageGallery) {
             AllImagesGallerySheet(
                 characters: characters,
@@ -233,6 +238,20 @@ struct HomeView: View {
                 .foregroundColor(theme.textSecondary)
                 .lineSpacing(4)
                 .padding(.top, 8)
+            
+            // Tour button
+            Button {
+                showAppTour = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "questionmark.circle")
+                        .font(.subheadline.weight(.medium))
+                    Text("Take me on a tour")
+                        .font(.subheadline.weight(.medium))
+                }
+                .foregroundColor(theme.primary)
+            }
+            .padding(.top, 4)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)

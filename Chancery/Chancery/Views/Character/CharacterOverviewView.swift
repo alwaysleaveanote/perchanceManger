@@ -664,6 +664,7 @@ struct CharacterOverviewView: View {
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
+                                .tint(.red)
                                 
                                 Button {
                                     duplicatePromptIndex = index
@@ -672,7 +673,7 @@ struct CharacterOverviewView: View {
                                 } label: {
                                     Label("Duplicate", systemImage: "doc.on.doc")
                                 }
-                                .tint(theme.primary)
+                                .tint(characterTheme.primary)
                             }
                     }
                 }

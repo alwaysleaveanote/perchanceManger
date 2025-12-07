@@ -41,6 +41,8 @@ struct CharacterDetailView: View {
             ToolbarItem(placement: .navigationBarLeading) {
                 if selectedPromptIndex != nil {
                     Button {
+                        // Dismiss keyboard first to ensure button works on first tap
+                        KeyboardHelper.dismiss()
                         withAnimation {
                             selectedPromptIndex = nil
                         }
@@ -50,9 +52,13 @@ struct CharacterDetailView: View {
                                 .font(.system(size: 16, weight: .medium))
                         }
                         .foregroundColor(characterTheme.primary)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 } else if isEditingCharacterInfo {
                     Button {
+                        // Dismiss keyboard first
+                        KeyboardHelper.dismiss()
                         // Auto-save and dismiss
                         isEditingCharacterInfo = false
                         dismiss()
@@ -62,7 +68,9 @@ struct CharacterDetailView: View {
                                 .font(.system(size: 16, weight: .medium))
                         }
                         .foregroundColor(characterTheme.primary)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
             }
             ToolbarItemGroup(placement: .keyboard) {
@@ -132,13 +140,22 @@ struct CharacterDetailView: View {
     // MARK: - Main Scroll View
 
     private var mainScrollView: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
-                mainColumn
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    mainColumn
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(.horizontal)
+                .padding(.vertical, 16)
+                .id("scrollTop")
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding(.horizontal)
-            .padding(.vertical, 16)
+            .onChange(of: selectedPromptIndex) { _, _ in
+                // Reset scroll position when switching between overview and prompt
+                withAnimation(.easeOut(duration: 0.1)) {
+                    proxy.scrollTo("scrollTop", anchor: .top)
+                }
+            }
         }
     }
 
