@@ -15,6 +15,7 @@ struct CharacterOverviewView: View {
     @State private var newLinkURL: String = ""
     @State private var showAddLinkForm: Bool = false
     @State private var showingProfileImagePicker: Bool = false
+    @State private var showingProfileImageViewer: Bool = false
     
     /// The theme for this character - resolved locally
     private var characterTheme: ResolvedTheme {
@@ -46,6 +47,19 @@ struct CharacterOverviewView: View {
                     character.profileImageData = data
                 }
             }
+        }
+        .fullScreenCover(isPresented: $showingProfileImageViewer) {
+            ProfileImageViewer(
+                imageData: character.profileImageData,
+                characterName: character.name,
+                onReplace: {
+                    showingProfileImageViewer = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showingProfileImagePicker = true
+                    }
+                }
+            )
+            .environmentObject(themeManager)
         }
     }
     
@@ -84,7 +98,13 @@ struct CharacterOverviewView: View {
             
             // Profile image - large circular for profile page
             Button {
-                showingProfileImagePicker = true
+                if character.profileImageData != nil {
+                    // Show enlarged image viewer
+                    showingProfileImageViewer = true
+                } else {
+                    // No image yet, show picker
+                    showingProfileImagePicker = true
+                }
             } label: {
                 ZStack(alignment: .bottomTrailing) {
                     if let data = character.profileImageData,
@@ -105,16 +125,18 @@ struct CharacterOverviewView: View {
                             )
                     }
                     
-                    // Edit badge
-                    Circle()
-                        .fill(theme.primary)
-                        .frame(width: 36, height: 36)
-                        .overlay(
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 16))
-                                .foregroundColor(theme.textOnPrimary)
-                        )
-                        .offset(x: -8, y: -8)
+                    // Edit badge - only show when no image
+                    if character.profileImageData == nil {
+                        Circle()
+                            .fill(theme.primary)
+                            .frame(width: 36, height: 36)
+                            .overlay(
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(theme.textOnPrimary)
+                            )
+                            .offset(x: -8, y: -8)
+                    }
                 }
             }
             .buttonStyle(.plain)
@@ -508,5 +530,106 @@ struct CharacterOverviewView: View {
                 .fill(theme.backgroundSecondary)
         )
         .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+}
+
+// MARK: - Profile Image Viewer
+
+/// Full-screen viewer for profile image with replace option
+struct ProfileImageViewer: View {
+    let imageData: Data?
+    let characterName: String
+    let onReplace: () -> Void
+    
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    var body: some View {
+        let theme = themeManager.resolved
+        
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Top bar
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.title3.weight(.medium))
+                            .foregroundColor(.white)
+                            .padding(12)
+                            .background(Color.white.opacity(0.2))
+                            .clipShape(Circle())
+                    }
+                    
+                    Spacer()
+                    
+                    Text(characterName)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    // Share button
+                    if let data = imageData, let uiImage = UIImage(data: data) {
+                        ShareLink(item: Image(uiImage: uiImage), preview: SharePreview(characterName, image: Image(uiImage: uiImage))) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.title3.weight(.medium))
+                                .foregroundColor(.white)
+                                .padding(12)
+                                .background(Color.white.opacity(0.2))
+                                .clipShape(Circle())
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                
+                // Image
+                if let data = imageData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(16)
+                } else {
+                    Spacer()
+                    Text("No image")
+                        .foregroundColor(.white.opacity(0.5))
+                    Spacer()
+                }
+                
+                // Bottom action card
+                VStack(spacing: 12) {
+                    Button {
+                        onReplace()
+                    } label: {
+                        HStack {
+                            Image(systemName: "photo.badge.arrow.down")
+                                .foregroundColor(theme.primary)
+                            Text("Replace Profile Image")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        .padding(14)
+                        .background(Color.white.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.black.opacity(0.6))
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
+        }
     }
 }

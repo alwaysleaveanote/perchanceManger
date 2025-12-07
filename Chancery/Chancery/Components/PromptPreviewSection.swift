@@ -64,33 +64,13 @@ struct PromptPreviewSection: View {
     
     // MARK: - Subviews
     
-    /// Header with title and copy button
+    /// Header with title
     private func headerView(theme: ResolvedTheme) -> some View {
-        HStack {
-            Text("Prompt Preview")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .fontDesign(theme.fontDesign)
-                .foregroundColor(theme.textPrimary)
-            
-            Spacer()
-            
-            copyButton(theme: theme)
-        }
-    }
-    
-    /// Copy to clipboard button
-    private func copyButton(theme: ResolvedTheme) -> some View {
-        Button {
-            copyToClipboard()
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "doc.on.doc")
-                Text("Copy")
-            }
-            .font(.caption)
-            .foregroundColor(theme.primary)
-        }
+        Text("Prompt Preview")
+            .font(.subheadline)
+            .fontWeight(.semibold)
+            .fontDesign(theme.fontDesign)
+            .foregroundColor(theme.textPrimary)
     }
     
     /// Scrollable prompt text container
@@ -116,13 +96,5 @@ struct PromptPreviewSection: View {
             }
         }
         .frame(maxHeight: maxHeight)
-    }
-    
-    // MARK: - Actions
-    
-    /// Copies the composed prompt to the system clipboard
-    private func copyToClipboard() {
-        Logger.debug("Copying prompt to clipboard (\(composedPrompt.count) characters)", category: .prompt)
-        UIPasteboard.general.string = composedPrompt
     }
 }

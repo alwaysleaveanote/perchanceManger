@@ -32,7 +32,8 @@ struct GlobalSettingsView: View {
     
     // Offline storage confirmation
     @State private var showingDisableOfflineStorageConfirmation = false
-
+    
+    
     private var selectedGeneratorOption: PerchanceGeneratorOption? {
         perchanceGenerators.first(where: { $0.name == presetStore.defaultPerchanceGenerator }) ?? perchanceGenerators.first
     }

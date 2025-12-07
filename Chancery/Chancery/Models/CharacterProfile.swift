@@ -175,6 +175,48 @@ extension CharacterProfile {
 // MARK: - Sample Data
 
 extension CharacterProfile {
+    
+    /// Default starter character for new users
+    static let starterCharacter: CharacterProfile = CharacterProfile(
+        name: "Luna",
+        bio: "A cheerful adventurer with silver hair and bright amber eyes. She's always ready for the next journey, whether it's exploring ancient ruins or relaxing at a cozy tavern.",
+        notes: "This is your starter character! Feel free to edit her details, add prompts, or use her as a template for your own characters.\n\nTips:\n• Add prompts to save your favorite image generation settings\n• Upload images to keep track of your creations\n• Set character-specific defaults to speed up prompt creation\n• Try different themes to personalize her profile",
+        prompts: [
+            SavedPrompt(
+                title: "Portrait",
+                text: "Luna, portrait shot",
+                outfit: "light traveling cloak, leather armor accents, silver pendant",
+                pose: "looking at viewer, slight smile, wind in hair",
+                environment: "soft blurred background, golden hour",
+                lighting: "warm sunlight from the side, soft shadows",
+                styleModifiers: "detailed, painterly, fantasy art style",
+                technicalModifiers: "high quality, sharp focus on face",
+                negativePrompt: "blurry, low quality, extra limbs"
+            ),
+            SavedPrompt(
+                title: "Adventure Scene",
+                text: "Luna exploring ancient ruins",
+                outfit: "explorer outfit, backpack, gloves, sturdy boots",
+                pose: "walking through a stone archway, torch in hand, curious expression",
+                environment: "ancient temple ruins, overgrown with vines, mysterious glowing runes",
+                lighting: "torch light casting warm glow, cool ambient light from cracks in ceiling",
+                styleModifiers: "cinematic, atmospheric, detailed environment",
+                technicalModifiers: "wide shot, depth of field",
+                negativePrompt: "modern elements, text, watermark"
+            )
+        ],
+        profileImageData: nil,
+        links: [
+            RelatedLink(title: "Perchance AI Generator", urlString: "https://perchance.org/ai-text-to-image-generator"),
+            RelatedLink(title: "Prompt Writing Tips", urlString: "https://perchance.org/ai-photo-prompt-generator")
+        ],
+        characterDefaults: [
+            .style: "detailed, high quality"
+        ],
+        characterDefaultPerchanceGenerator: nil,
+        characterThemeId: nil
+    )
+    
     static let sampleCharacters: [CharacterProfile] = [
         CharacterProfile(
             name: "Rin",
@@ -195,7 +237,7 @@ extension CharacterProfile {
                 SavedPrompt(
                     title: "Cozy Cabin Portrait",
                     text: "Rin relaxing in a warm cabin",
-                    outfit: "soft sweater, comfy pants, casual looksoft sweater, comfy pants, casual looksoft sweater, comfy pants, casual looksoft sweater, comfy pants, casual looksoft sweater, comfy pants, casual look",
+                    outfit: "soft sweater, comfy pants, casual look",
                     pose: "sitting cross-legged on a couch, holding a mug",
                     environment: "cozy wooden cabin, fireplace, bookshelves, warm lighting",
                     lighting: "warm soft lamp light, gentle shadows",
@@ -230,4 +272,114 @@ extension CharacterProfile {
             links: []
         )
     ]
+    
+    // MARK: - Test Character Generator
+    
+    /// Generates a random test character with varied data for demo/testing
+    static func generateTestCharacter(availableThemes: [AppTheme]) -> CharacterProfile {
+        let names = [
+            "Aria Stormwind", "Zephyr Nightshade", "Ember Thornwood", "Frost Silvermoon",
+            "Sage Ironheart", "Nova Starfire", "Raven Shadowmere", "Phoenix Goldleaf",
+            "Willow Mistwalker", "Storm Blackwood", "Crystal Sunblade", "Ash Winterborn"
+        ]
+        
+        let bios = [
+            "A wandering mage with a mysterious past and a talent for elemental magic.",
+            "A skilled warrior from the northern mountains, known for their unwavering loyalty.",
+            "A cunning rogue who operates in the shadows, always three steps ahead.",
+            "A gentle healer with the power to mend both body and spirit.",
+            "An ambitious scholar seeking forbidden knowledge in ancient ruins.",
+            "A charismatic bard whose songs can inspire armies or bring foes to tears."
+        ]
+        
+        let notes = [
+            "Great for action scenes and dramatic poses.",
+            "Works well with both fantasy and modern settings.",
+            "Best in soft lighting with warm color palettes.",
+            "Experiment with different outfits and environments.",
+            "Try various expressions from stoic to playful."
+        ]
+        
+        let outfits = [
+            "elegant flowing robes with silver embroidery",
+            "practical leather armor with brass buckles",
+            "casual modern streetwear, hoodie and jeans",
+            "formal Victorian attire with lace details",
+            "futuristic bodysuit with glowing accents"
+        ]
+        
+        let poses = [
+            "standing confidently, arms crossed",
+            "sitting thoughtfully, chin resting on hand",
+            "dynamic action pose, mid-leap",
+            "relaxed pose, leaning against a wall",
+            "dramatic pose, looking over shoulder"
+        ]
+        
+        let environments = [
+            "mystical forest with glowing mushrooms",
+            "bustling city street at night, neon lights",
+            "ancient library with floating books",
+            "snowy mountain peak at sunset",
+            "cozy tavern interior, warm firelight"
+        ]
+        
+        let linkTitles = [
+            ("Character Reference", "https://example.com/ref"),
+            ("Inspiration Board", "https://pinterest.com/board"),
+            ("Art Commission Info", "https://example.com/commission")
+        ]
+        
+        // Generate random prompts
+        let promptCount = Int.random(in: 1...4)
+        var prompts: [SavedPrompt] = []
+        
+        for i in 0..<promptCount {
+            let promptTitles = ["Portrait", "Action Shot", "Casual Scene", "Dramatic Moment", "Full Body"]
+            prompts.append(SavedPrompt(
+                title: promptTitles[i % promptTitles.count],
+                text: "\(names.randomElement()!), \(poses.randomElement()!)",
+                outfit: outfits.randomElement(),
+                pose: poses.randomElement(),
+                environment: environments.randomElement(),
+                lighting: ["soft natural light", "dramatic rim lighting", "warm golden hour", "cool moonlight"].randomElement(),
+                styleModifiers: ["detailed", "painterly", "anime style", "realistic", "stylized"].randomElement(),
+                technicalModifiers: ["high quality", "8k", "sharp focus"].randomElement(),
+                negativePrompt: "low quality, blurry"
+            ))
+        }
+        
+        // Generate random links
+        let linkCount = Int.random(in: 0...2)
+        var links: [RelatedLink] = []
+        for _ in 0..<linkCount {
+            if let link = linkTitles.randomElement() {
+                links.append(RelatedLink(title: link.0, urlString: link.1))
+            }
+        }
+        
+        // Random theme
+        let themeId: String? = Bool.random() ? availableThemes.randomElement()?.id : nil
+        
+        // Random defaults
+        var defaults: [GlobalDefaultKey: String] = [:]
+        if Bool.random() {
+            defaults[.style] = ["detailed", "painterly", "anime"].randomElement()!
+        }
+        if Bool.random() {
+            defaults[.lighting] = ["soft lighting", "dramatic lighting"].randomElement()!
+        }
+        
+        return CharacterProfile(
+            name: names.randomElement()!,
+            bio: bios.randomElement()!,
+            notes: notes.randomElement()!,
+            prompts: prompts,
+            profileImageData: nil,
+            links: links,
+            characterDefaults: defaults,
+            characterDefaultPerchanceGenerator: Bool.random() ? "ai-photo-generator" : nil,
+            characterThemeId: themeId
+        )
+    }
 }

@@ -121,6 +121,10 @@ final class DataStore: ObservableObject {
            let loaded = try? decoder.decode([CharacterProfile].self, from: data) {
             characters = loaded
             Logger.info("Loaded \(loaded.count) characters from local storage", category: .data)
+        } else {
+            // Add starter character for new users
+            characters = [CharacterProfile.starterCharacter]
+            Logger.info("Added starter character for new user", category: .data)
         }
         
         // Load presets
@@ -382,6 +386,30 @@ final class DataStore: ObservableObject {
         }
         
         Logger.debug("Deleted preset: \(preset.name)", category: .data)
+    }
+    
+    /// Resets presets to sample defaults
+    func resetPresetsToDefaults() {
+        // Delete all existing presets from CloudKit
+        let oldPresets = presets
+        Task {
+            for preset in oldPresets {
+                try? await cloudKit.deletePreset(preset)
+            }
+        }
+        
+        // Replace with sample presets
+        presets = PromptPresetStore.samplePresets
+        scheduleSave()
+        
+        // Save new presets to CloudKit
+        Task {
+            for preset in presets {
+                try? await cloudKit.savePreset(preset)
+            }
+        }
+        
+        Logger.info("Reset presets to defaults (\(presets.count) presets)", category: .data)
     }
     
     /// Gets presets for a specific section kind

@@ -22,13 +22,15 @@ struct SafariItem: Identifiable {
 
 /// Represents the available tabs in the main navigation.
 private enum Tab: Int, CaseIterable {
-    case scratchpad = 0
-    case characters = 1
-    case settings = 2
+    case home = 0
+    case scratchpad = 1
+    case characters = 2
+    case settings = 3
     
     /// The display title for the tab
     var title: String {
         switch self {
+        case .home: return "Home"
         case .scratchpad: return "Scratchpad"
         case .characters: return "Characters"
         case .settings: return "Settings"
@@ -38,6 +40,7 @@ private enum Tab: Int, CaseIterable {
     /// The SF Symbol icon key for the tab
     var iconKey: String {
         switch self {
+        case .home: return "house.fill"
         case .scratchpad: return "square.and.pencil"
         case .characters: return "person.3"
         case .settings: return "gearshape"
@@ -76,10 +79,13 @@ struct ContentView: View {
     @State private var scratchpadSaved: [SavedPrompt] = []
     
     /// Currently selected tab
-    @State private var selectedTab: Tab = .scratchpad
+    @State private var selectedTab: Tab = .home
     
     /// Safari sheet presentation item
     @State private var safariItem: SafariItem? = nil
+    
+    /// Character ID to navigate to (for deep linking from Home)
+    @State private var navigateToCharacterId: UUID? = nil
     
     // MARK: - Environment
     
@@ -114,6 +120,7 @@ struct ContentView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
+            homeTab
             scratchpadTab
             charactersTab
             settingsTab
@@ -130,6 +137,27 @@ struct ContentView: View {
     }
     
     // MARK: - Tab Views
+    
+    /// Home tab content
+    private var homeTab: some View {
+        HomeView(
+            characters: characters.wrappedValue,
+            onNavigateToScratchpad: {
+                selectedTab = .scratchpad
+            },
+            onNavigateToCharacters: {
+                selectedTab = .characters
+            },
+            onNavigateToCharacter: { characterId in
+                navigateToCharacterId = characterId
+                selectedTab = .characters
+            }
+        )
+        .tabItem {
+            Label(Tab.home.title, systemImage: tabIcon(for: .home))
+        }
+        .tag(Tab.home)
+    }
     
     /// Scratchpad tab content
     private var scratchpadTab: some View {
@@ -149,7 +177,8 @@ struct ContentView: View {
     private var charactersTab: some View {
         CharactersView(
             characters: characters,
-            openGenerator: openGenerator
+            openGenerator: openGenerator,
+            navigateToCharacterId: $navigateToCharacterId
         )
         .tabItem {
             Label(Tab.characters.title, systemImage: tabIcon(for: .characters))

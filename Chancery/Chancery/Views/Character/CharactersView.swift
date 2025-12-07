@@ -32,6 +32,9 @@ struct CharactersView: View {
     /// Callback to open the Perchance generator with a prompt
     let openGenerator: (String) -> Void
     
+    /// Character ID to navigate to (for deep linking)
+    @Binding var navigateToCharacterId: UUID?
+    
     // MARK: - Environment & State
     
     @EnvironmentObject var themeManager: ThemeManager
@@ -45,7 +48,21 @@ struct CharactersView: View {
     /// Whether the delete confirmation alert is showing
     @State private var showingDeleteConfirmation = false
     
+    /// Search text for filtering characters
+    @State private var searchText = ""
+    
     // MARK: - Computed Properties
+    
+    /// Filtered characters based on search text
+    private var filteredCharacters: [CharacterProfile] {
+        if searchText.isEmpty {
+            return characters
+        }
+        let lowercasedSearch = searchText.lowercased()
+        return characters.filter { character in
+            character.name.lowercased().contains(lowercasedSearch)
+        }
+    }
     
     /// The global theme (ignores character theme override to prevent flash)
     private var globalTheme: ResolvedTheme {
@@ -66,48 +83,151 @@ struct CharactersView: View {
                 theme.background
                     .ignoresSafeArea()
                 
-                List {
-                    Section(header: Text("Your Characters")
-                        .foregroundColor(theme.textSecondary)
-                        .fontDesign(theme.fontDesign)
-                    ) {
-                        if characters.isEmpty {
-                            Text("No characters yet. Tap + to create one.")
-                                .foregroundColor(theme.textSecondary)
-                                .fontDesign(theme.fontDesign)
-                                .listRowBackground(theme.backgroundSecondary)
-                        } else {
-                            ForEach(Array(characters.enumerated()), id: \.element.id) { index, character in
-                                // Use NavigationLink with EmptyView label to hide default chevron
-                                // CharacterRowView provides the visible content with custom themed chevron
-                                ZStack {
-                                    NavigationLink {
-                                        CharacterDetailView(
-                                            character: $characters[index],
-                                            openGenerator: openGenerator
-                                        )
-                                    } label: {
-                                        EmptyView()
-                                    }
-                                    .opacity(0)
-                                    
-                                    CharacterRowView(character: character)
-                                }
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                                .listRowSeparator(.hidden)
+                VStack(spacing: 0) {
+                    // Search bar
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(theme.textSecondary)
+                        TextField("Search characters...", text: $searchText)
+                            .font(.body)
+                            .foregroundColor(theme.textPrimary)
+                        
+                        if !searchText.isEmpty {
+                            Button {
+                                searchText = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(theme.textSecondary)
                             }
-                            .onDelete { indices in
-                                if let first = indices.first {
-                                    characterToDelete = characters[first]
-                                    showingDeleteConfirmation = true
+                        }
+                    }
+                    .padding(12)
+                    .background(theme.backgroundTertiary)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(theme.background)
+                    
+                    List {
+                        Section(header: Text("Your Characters")
+                            .foregroundColor(theme.textSecondary)
+                            .fontDesign(theme.fontDesign)
+                        ) {
+                            if characters.isEmpty {
+                                VStack(spacing: 16) {
+                                    Text("No characters yet")
+                                        .font(.headline)
+                                        .foregroundColor(theme.textPrimary)
+                                        .fontDesign(theme.fontDesign)
+                                    
+                                    Text("Create your first character or generate a test character to get started.")
+                                        .font(.subheadline)
+                                        .foregroundColor(theme.textSecondary)
+                                        .fontDesign(theme.fontDesign)
+                                        .multilineTextAlignment(.center)
+                                    
+                                    HStack(spacing: 12) {
+                                        Button {
+                                            showingNewCharacterSheet = true
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "plus")
+                                                Text("New Character")
+                                            }
+                                            .font(.subheadline.weight(.medium))
+                                            .foregroundColor(theme.textOnPrimary)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
+                                            .background(theme.primary)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .contentShape(Rectangle())
+                                        }
+                                        .buttonStyle(.plain)
+                                        
+                                        Button {
+                                            generateTestCharacter()
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "dice")
+                                                Text("Generate")
+                                            }
+                                            .font(.subheadline.weight(.medium))
+                                            .foregroundColor(theme.primary)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
+                                            .background(theme.primary.opacity(0.15))
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .contentShape(Rectangle())
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 20)
+                                .listRowBackground(theme.backgroundSecondary)
+                            } else if filteredCharacters.isEmpty {
+                                Text("No characters match \"\(searchText)\"")
+                                    .foregroundColor(theme.textSecondary)
+                                    .fontDesign(theme.fontDesign)
+                                    .listRowBackground(theme.backgroundSecondary)
+                            } else {
+                                ForEach(filteredCharacters) { character in
+                                    // Find the actual index in the original array for binding
+                                    if let index = characters.firstIndex(where: { $0.id == character.id }) {
+                                        // Use NavigationLink with EmptyView label to hide default chevron
+                                        // CharacterRowView provides the visible content with custom themed chevron
+                                        ZStack {
+                                            NavigationLink {
+                                                CharacterDetailView(
+                                                    character: $characters[index],
+                                                    openGenerator: openGenerator
+                                                )
+                                            } label: {
+                                                EmptyView()
+                                            }
+                                            .opacity(0)
+                                            
+                                            CharacterRowView(character: character)
+                                        }
+                                        .listRowBackground(Color.clear)
+                                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                                        .listRowSeparator(.hidden)
+                                    }
+                                }
+                                .onDelete { indices in
+                                    // Map filtered indices back to original array
+                                    let charactersToDelete = indices.compactMap { filteredCharacters.indices.contains($0) ? filteredCharacters[$0] : nil }
+                                    if let first = charactersToDelete.first {
+                                        characterToDelete = first
+                                        showingDeleteConfirmation = true
+                                    }
                                 }
                             }
                         }
                     }
+                    .scrollContentBackground(.hidden)
+                    .listStyle(.insetGrouped)
+                    
+                    // Generate Test Character button at bottom
+                    if !characters.isEmpty {
+                        Button {
+                            generateTestCharacter()
+                        } label: {
+                            HStack {
+                                Image(systemName: "dice")
+                                Text("Generate Test Character")
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(theme.primary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(theme.primary.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                    }
                 }
-                .scrollContentBackground(.hidden)
-                .listStyle(.insetGrouped)
             }
             .navigationTitle("Characters")
             .navigationBarTitleDisplayMode(.inline)
@@ -155,6 +275,27 @@ struct CharactersView: View {
                     Text("Are you sure you want to delete this character?")
                 }
             }
+            .background(
+                // Hidden NavigationLink for programmatic navigation from Home
+                Group {
+                    if let id = navigateToCharacterId,
+                       let index = characters.firstIndex(where: { $0.id == id }) {
+                        NavigationLink(
+                            destination: CharacterDetailView(
+                                character: $characters[index],
+                                openGenerator: openGenerator
+                            ),
+                            isActive: Binding(
+                                get: { navigateToCharacterId != nil },
+                                set: { if !$0 { navigateToCharacterId = nil } }
+                            )
+                        ) {
+                            EmptyView()
+                        }
+                        .hidden()
+                    }
+                }
+            )
         }
     }
 
@@ -178,6 +319,13 @@ struct CharactersView: View {
         Logger.info("Deleting character: \(character.name)", category: .character)
         characters.remove(at: index)
         characterToDelete = nil
+    }
+    
+    /// Generates a random test character for demo/testing purposes
+    private func generateTestCharacter() {
+        let testCharacter = CharacterProfile.generateTestCharacter(availableThemes: themeManager.availableThemes)
+        characters.insert(testCharacter, at: 0)
+        Logger.info("Generated test character: \(testCharacter.name)", category: .character)
     }
 }
 

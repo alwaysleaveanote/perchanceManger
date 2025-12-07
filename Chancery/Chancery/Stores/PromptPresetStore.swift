@@ -174,31 +174,57 @@ extension PromptPresetStore {
         PromptPreset(kind: .environment, name: "Cozy Room", text: "warm cozy bedroom, soft blankets, fairy lights, bookshelves"),
         PromptPreset(kind: .environment, name: "Sci-Fi Lab", text: "sleek futuristic lab, holographic screens, glowing consoles"),
         
-        // Lighting presets
-        PromptPreset(kind: .lighting, name: "Soft Studio Lighting", text: "soft even studio lighting, gentle shadows, flattering light"),
-        PromptPreset(kind: .lighting, name: "Dramatic Rim Light", text: "strong rim light from behind, deep shadows, high contrast"),
+        // Lighting presets - comprehensive options
+        PromptPreset(kind: .lighting, name: "Golden Hour", text: "golden hour lighting, warm orange and amber tones, sun low on horizon, long soft shadows, lens flare, magical hour, warm color temperature, backlit subject, glowing highlights"),
+        PromptPreset(kind: .lighting, name: "Studio Portrait", text: "professional studio lighting setup, three-point lighting, key light with soft fill light, rim light separation, softbox diffusion, even illumination, no harsh shadows, controlled lighting environment"),
+        PromptPreset(kind: .lighting, name: "Dramatic Rim", text: "dramatic rim lighting, strong backlight creating silhouette edges, high contrast chiaroscuro, moody atmosphere, dark shadows, glowing outline, cinematic lighting, volumetric light rays"),
+        PromptPreset(kind: .lighting, name: "Soft Natural", text: "soft diffused natural daylight, overcast sky lighting, gentle shadows, flattering skin tones, even ambient light, no harsh highlights, natural color balance, outdoor shade lighting"),
+        PromptPreset(kind: .lighting, name: "Neon Cyberpunk", text: "neon lighting, vibrant pink and cyan color cast, electric blue and magenta glow, reflective wet surfaces, urban night atmosphere, holographic reflections, LED accent lights, futuristic city glow"),
+        PromptPreset(kind: .lighting, name: "Candlelight", text: "warm candlelight illumination, flickering orange and amber glow, intimate romantic atmosphere, soft dancing shadows, low-key lighting, warm color temperature, cozy ambiance, fire glow"),
+        PromptPreset(kind: .lighting, name: "Moonlight", text: "cool moonlight illumination, blue-silver ethereal tones, night atmosphere, subtle soft shadows, starlight, nocturnal ambiance, cool color temperature, mystical glow"),
+        PromptPreset(kind: .lighting, name: "Window Light", text: "natural window light from side, soft directional indoor lighting, Rembrandt lighting pattern, gentle shadows on opposite side, ambient room fill, diffused daylight through curtains"),
         
-        // Style presets
-        PromptPreset(kind: .style, name: "Painterly", text: "digital painting, visible brush strokes, rich colors"),
-        PromptPreset(kind: .style, name: "Anime Cel-Shaded", text: "anime style, crisp lineart, cel-shaded coloring"),
+        // Style presets - diverse artistic styles
+        PromptPreset(kind: .style, name: "Photorealistic", text: "photorealistic rendering, hyperrealistic detail, lifelike appearance, natural skin texture and pores, realistic material properties, physically accurate lighting, indistinguishable from photograph, ultra-realistic"),
+        PromptPreset(kind: .style, name: "Digital Painting", text: "digital painting style, painterly brushstrokes visible, rich saturated color palette, artistic interpretation, professional digital art, trending on artstation, detailed illustration, masterful technique"),
+        PromptPreset(kind: .style, name: "Anime/Manga", text: "anime art style, manga aesthetic, clean crisp lineart, cel-shaded flat coloring, large expressive eyes, Japanese animation style, vibrant colors, dynamic poses, studio quality anime"),
+        PromptPreset(kind: .style, name: "Oil Painting", text: "classical oil painting style, old masters technique, rich impasto textures, museum quality fine art, Renaissance influence, visible canvas texture, glazing layers, timeless masterpiece quality"),
+        PromptPreset(kind: .style, name: "Watercolor", text: "traditional watercolor painting, soft bleeding edges, transparent color washes, wet-on-wet technique, delicate paper texture, artistic color bleeding, loose expressive style, luminous transparency"),
+        PromptPreset(kind: .style, name: "Comic Book", text: "comic book illustration style, bold black ink outlines, halftone dot shading, dynamic action composition, graphic novel aesthetic, pop art influence, vibrant flat colors, sequential art style"),
+        PromptPreset(kind: .style, name: "3D Render", text: "3D CGI render, photorealistic CGI, subsurface scattering on skin, ray traced global illumination, Octane render engine, Unreal Engine 5 quality, physically based rendering, studio lighting setup"),
+        PromptPreset(kind: .style, name: "Concept Art", text: "professional concept art, entertainment design illustration, trending on artstation and deviantart, industry standard quality, detailed environment and character design, visual development art"),
+        PromptPreset(kind: .style, name: "Fantasy Art", text: "epic fantasy art illustration, magical atmosphere with particle effects, detailed fantasy world building, dramatic composition, enchanted lighting, mythical aesthetic, book cover quality"),
+        PromptPreset(kind: .style, name: "Vintage Photo", text: "vintage photograph aesthetic, authentic film grain texture, faded muted colors, retro color grading, nostalgic 1970s feel, aged photo quality, slight vignette, analog camera look"),
         
-        // Technical presets
-        PromptPreset(kind: .technical, name: "High Detail", text: "8k resolution, ultra-detailed, sharp focus"),
-        PromptPreset(kind: .technical, name: "Soft Focus Portrait", text: "soft focus background, bokeh, subject in crisp focus"),
+        // Technical presets - quality and camera settings
+        PromptPreset(kind: .technical, name: "Ultra HD", text: "8k UHD resolution, ultra-detailed rendering, extremely sharp focus throughout, high definition clarity, intricate fine details visible, maximum quality output, professional grade"),
+        PromptPreset(kind: .technical, name: "Portrait Depth", text: "shallow depth of field, wide aperture f/1.4 to f/2.8, beautiful creamy bokeh background, subject tack sharp in focus, blurred background separation, portrait lens compression, 85mm equivalent"),
+        PromptPreset(kind: .technical, name: "Wide Angle", text: "wide angle lens perspective, 24mm focal length equivalent, expansive environmental context, slight barrel distortion, dramatic foreground to background scale, architectural photography style"),
+        PromptPreset(kind: .technical, name: "Cinematic", text: "cinematic film composition, 35mm motion picture film look, anamorphic lens characteristics with oval bokeh, 2.39:1 aspect ratio feel, movie still quality, color graded, theatrical lighting"),
+        PromptPreset(kind: .technical, name: "Macro Detail", text: "macro photography extreme close-up, intricate microscopic details visible, razor sharp focus plane, professional macro lens, detailed texture capture, scientific precision"),
+        PromptPreset(kind: .technical, name: "Professional Photo", text: "professional photography quality, full-frame DSLR camera, perfect exposure and white balance, accurate color reproduction, editorial quality, magazine cover worthy, studio professional"),
+        PromptPreset(kind: .technical, name: "Soft Aesthetic", text: "soft focus dreamy atmosphere, gentle gaussian blur, ethereal glowing quality, diffused lighting, romantic soft-focus lens effect, hazy dreamlike ambiance, pastel tones"),
+        PromptPreset(kind: .technical, name: "High Contrast", text: "high contrast dramatic look, deep rich blacks, bright clean highlights, punchy vibrant saturated colors, bold tonal range, striking visual impact, vivid color pop"),
         
-        // Negative presets
-        PromptPreset(kind: .negative, name: "Clean Image", text: "no text, no watermark, no extra limbs, no distortions"),
-        PromptPreset(kind: .negative, name: "Simple Background", text: "no cluttered background, no busy patterns")
+        // Negative presets - common issues to avoid
+        PromptPreset(kind: .negative, name: "Standard Quality", text: "blurry, out of focus, low quality, low resolution, pixelated, jpeg artifacts, compression artifacts, noise, grainy, poorly rendered, amateur quality"),
+        PromptPreset(kind: .negative, name: "Anatomy Fixes", text: "bad anatomy, wrong anatomy, extra limbs, missing limbs, floating limbs, disconnected limbs, deformed hands, extra fingers, fused fingers, too many fingers, missing fingers, mutated hands, malformed limbs"),
+        PromptPreset(kind: .negative, name: "Face Fixes", text: "deformed face, ugly face, disfigured features, bad eyes, crossed eyes, asymmetrical eyes, lazy eye, asymmetrical face, distorted facial features, uncanny valley, weird expression, mutation"),
+        PromptPreset(kind: .negative, name: "Clean Output", text: "watermark, signature, text overlay, logo, username, artist name, copyright notice, website URL, banner, title, caption, label, stamp, border"),
+        PromptPreset(kind: .negative, name: "Composition", text: "cropped awkwardly, out of frame, cut off at edges, bad framing, poorly composed, off-center subject, cluttered background, distracting elements, unbalanced composition"),
+        PromptPreset(kind: .negative, name: "Full Negative", text: "blurry, low quality, bad anatomy, extra limbs, deformed, disfigured, ugly, mutation, watermark, text, signature, cropped, worst quality, low resolution, jpeg artifacts, error, duplicate"),
+        PromptPreset(kind: .negative, name: "Realistic Negative", text: "cartoon, anime, illustration, painting, drawing, sketch, artwork, cgi, 3d render, digital art, unrealistic, stylized, artistic interpretation, non-photographic"),
+        PromptPreset(kind: .negative, name: "Anime Negative", text: "realistic, photorealistic, photograph, 3d render, western cartoon style, bad proportions, off-model, inconsistent style, wrong art style, semi-realistic")
     ]
     
     /// Sample global defaults for initial app state
     static let sampleDefaults: [GlobalDefaultKey: String] = [
-        .outfit: "casual modern outfit, comfortable and practical",
-        .pose: "natural relaxed pose",
-        .environment: "simple neutral background",
-        .lighting: "soft even lighting, no harsh shadows",
-        .style: "high quality digital illustration",
-        .technical: "high detail, clean lines, sharp focus",
-        .negative: "no text, no watermark, no extra limbs, no distortions"
+        .outfit: "",
+        .pose: "",
+        .environment: "",
+        .lighting: "soft natural lighting",
+        .style: "high quality, detailed",
+        .technical: "sharp focus, high resolution",
+        .negative: "blurry, low quality, bad anatomy, extra limbs, watermark, text"
     ]
 }

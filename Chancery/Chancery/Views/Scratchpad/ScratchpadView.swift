@@ -120,7 +120,10 @@ struct ScratchpadView: View {
         
         NavigationView {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Quick Actions Bar at top
+                    quickActionsBar
+                    
                     // Prompt Preview Card
                     VStack(alignment: .leading, spacing: 0) {
                         PromptPreviewSection(composedPrompt: composedScratchPrompt)
@@ -163,9 +166,6 @@ struct ScratchpadView: View {
                             .fill(theme.backgroundSecondary)
                     )
                     .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
-                    
-                    // Action buttons at bottom of scroll
-                    actionButtonsSection
                 }
                 .padding()
             }
@@ -234,6 +234,9 @@ struct ScratchpadView: View {
                     title: $addToCharacterTitle,
                     onAdd: { characterId, title in
                         addCurrentScratch(to: characterId, withTitle: title)
+                    },
+                    onCreateNewCharacter: { newCharacter, promptTitle in
+                        createCharacterAndAddPrompt(newCharacter, promptTitle: promptTitle)
                     }
                 )
                 .presentationDetents([.large])
@@ -293,7 +296,160 @@ struct ScratchpadView: View {
         }
     }
 
-    // MARK: - Action Buttons Section
+    // MARK: - Quick Actions Bar
+    
+    private var quickActionsBar: some View {
+        let theme = themeManager.resolved
+        
+        return VStack(spacing: 12) {
+            // Primary action row
+            HStack(spacing: 10) {
+                // Copy Prompt button
+                Button {
+                    UIPasteboard.general.string = composedScratchPrompt
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 16, weight: .medium))
+                        Text("Copy Prompt")
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .foregroundColor(theme.primary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 16)
+                    .background(theme.backgroundTertiary)
+                    .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusMedium))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                            .stroke(theme.primary.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                
+                // Open Generator - Primary action (larger)
+                Button {
+                    let full = composedScratchPrompt
+                    UIPasteboard.general.string = full
+                    scratchpadPrompt = full
+                    openGenerator(full)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text("Generate")
+                            .font(.headline.weight(.semibold))
+                    }
+                    .foregroundColor(theme.textOnPrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(
+                            colors: [theme.primary, theme.primary.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusMedium))
+                    .shadow(color: theme.primary.opacity(0.4), radius: 8, x: 0, y: 4)
+                }
+            }
+            
+            // Secondary actions row
+            HStack(spacing: 10) {
+                // Saved Scratches
+                quickActionButton(
+                    icon: "tray.full",
+                    label: "History",
+                    badge: scratchpadSaved.isEmpty ? nil : "\(scratchpadSaved.count)",
+                    theme: theme
+                ) {
+                    activeSheet = .savedScratches
+                }
+                
+                // Save Current - renamed to be clearer
+                quickActionButton(
+                    icon: "bookmark",
+                    label: "Bookmark",
+                    badge: nil,
+                    theme: theme
+                ) {
+                    saveCurrentScratch()
+                }
+                
+                // Add to Character
+                if !characters.isEmpty {
+                    quickActionButton(
+                        icon: "person.badge.plus",
+                        label: "Add to",
+                        badge: nil,
+                        theme: theme
+                    ) {
+                        addToCharacterTitle = ""
+                        activeSheet = .addToCharacter
+                    }
+                }
+                
+                // Clear
+                quickActionButton(
+                    icon: "trash",
+                    label: "Clear",
+                    badge: nil,
+                    theme: theme,
+                    isDestructive: true
+                ) {
+                    showClearConfirmation = true
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                .fill(theme.backgroundSecondary)
+        )
+        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+    
+    private func quickActionButton(
+        icon: String,
+        label: String,
+        badge: String?,
+        theme: ResolvedTheme,
+        isDestructive: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: icon)
+                        .font(.system(size: 20))
+                        .foregroundColor(isDestructive ? theme.error : theme.primary)
+                    
+                    if let badge = badge {
+                        Text(badge)
+                            .font(.caption2.weight(.bold))
+                            .foregroundColor(theme.textOnPrimary)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(theme.primary)
+                            .clipShape(Capsule())
+                            .offset(x: 8, y: -4)
+                    }
+                }
+                .frame(height: 24)
+                
+                Text(label)
+                    .font(.caption2)
+                    .foregroundColor(isDestructive ? theme.error : theme.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                    .fill(theme.backgroundTertiary)
+            )
+        }
+    }
+    
+    // MARK: - Action Buttons Section (Legacy - kept for reference)
 
     private var actionButtonsSection: some View {
         let theme = themeManager.resolved
@@ -651,6 +807,36 @@ struct ScratchpadView: View {
 
         guard let index = characters.firstIndex(where: { $0.id == characterId }) else { return }
         characters[index].prompts.append(newPrompt)
+    }
+    
+    private func createCharacterAndAddPrompt(_ newCharacter: CharacterProfile, promptTitle: String) {
+        let full = composedScratchPrompt
+        
+        let newPrompt = SavedPrompt(
+            title: promptTitle,
+            text: full,
+            physicalDescription: physicalDescription.nonEmpty,
+            outfit: outfit.nonEmpty,
+            pose: pose.nonEmpty,
+            environment: environment.nonEmpty,
+            lighting: lighting.nonEmpty,
+            styleModifiers: styleModifiers.nonEmpty,
+            technicalModifiers: technicalModifiers.nonEmpty,
+            negativePrompt: negativePrompt.nonEmpty,
+            additionalInfo: additionalInfo.nonEmpty,
+            physicalDescriptionPresetName: physicalPresetName,
+            outfitPresetName: outfitPresetName,
+            posePresetName: posePresetName,
+            environmentPresetName: environmentPresetName,
+            lightingPresetName: lightingPresetName,
+            stylePresetName: stylePresetName,
+            technicalPresetName: technicalPresetName,
+            negativePresetName: negativePresetName
+        )
+        
+        var characterWithPrompt = newCharacter
+        characterWithPrompt.prompts.append(newPrompt)
+        characters.insert(characterWithPrompt, at: 0)
     }
 
     private func loadScratch(_ prompt: SavedPrompt) {

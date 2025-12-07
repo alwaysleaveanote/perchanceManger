@@ -319,7 +319,7 @@ struct CharacterDetailView: View {
         // Add images from each prompt with their prompt index
         for (promptIndex, prompt) in character.prompts.enumerated() {
             for promptImage in prompt.images {
-                images.append(GalleryImage(from: promptImage, promptIndex: promptIndex))
+                images.append(GalleryImage(from: promptImage, promptIndex: promptIndex, promptTitle: prompt.title))
             }
         }
 

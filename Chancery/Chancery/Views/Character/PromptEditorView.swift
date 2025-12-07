@@ -223,7 +223,7 @@ struct PromptEditorView: View {
         }
         .fullScreenCover(isPresented: $showingPromptGallery) {
             GalleryView(
-                images: promptBinding.wrappedValue.images.map { GalleryImage(from: $0, promptIndex: promptIndex) },
+                images: promptBinding.wrappedValue.images.map { GalleryImage(from: $0, promptIndex: promptIndex, promptTitle: promptBinding.wrappedValue.title) },
                 startIndex: promptGalleryStartIndex,
                 onMakeProfilePicture: { imageData in
                     character.profileImageData = imageData
