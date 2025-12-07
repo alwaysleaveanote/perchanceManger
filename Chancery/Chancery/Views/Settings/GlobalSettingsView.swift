@@ -214,7 +214,8 @@ struct GlobalSettingsView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Choose which Perchance generator to open when generating images. You can select a popular generator or enter a custom one.")
                         .font(.caption)
-                        .foregroundColor(theme.textSecondary)
+                        .foregroundColor(themeManager.resolved.textSecondary)
+                        .padding(.bottom, 8)
                     
                     // Current selection display
                     HStack {

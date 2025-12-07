@@ -87,6 +87,9 @@ struct ContentView: View {
     /// Character ID to navigate to (for deep linking from Home)
     @State private var navigateToCharacterId: UUID? = nil
     
+    /// Prompt ID to navigate to (for deep linking from Home gallery)
+    @State private var navigateToPromptId: UUID? = nil
+    
     // MARK: - Environment
     
     @EnvironmentObject var themeManager: ThemeManager
@@ -149,6 +152,12 @@ struct ContentView: View {
                 selectedTab = .characters
             },
             onNavigateToCharacter: { characterId in
+                navigateToPromptId = nil
+                navigateToCharacterId = characterId
+                selectedTab = .characters
+            },
+            onNavigateToPrompt: { characterId, promptId in
+                navigateToPromptId = promptId
                 navigateToCharacterId = characterId
                 selectedTab = .characters
             }
@@ -178,7 +187,8 @@ struct ContentView: View {
         CharactersView(
             characters: characters,
             openGenerator: openGenerator,
-            navigateToCharacterId: $navigateToCharacterId
+            navigateToCharacterId: $navigateToCharacterId,
+            navigateToPromptId: $navigateToPromptId
         )
         .tabItem {
             Label(Tab.characters.title, systemImage: tabIcon(for: .characters))

@@ -35,6 +35,9 @@ struct CharactersView: View {
     /// Character ID to navigate to (for deep linking)
     @Binding var navigateToCharacterId: UUID?
     
+    /// Prompt ID to navigate to (for deep linking to specific prompt)
+    @Binding var navigateToPromptId: UUID?
+    
     // MARK: - Environment & State
     
     @EnvironmentObject var themeManager: ThemeManager
@@ -215,7 +218,7 @@ struct CharactersView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "dice")
-                                Text("Generate Test Character")
+                                Text("Generate Random Character")
                             }
                             .font(.subheadline.weight(.medium))
                             .foregroundColor(theme.primary)
@@ -283,11 +286,17 @@ struct CharactersView: View {
                         NavigationLink(
                             destination: CharacterDetailView(
                                 character: $characters[index],
-                                openGenerator: openGenerator
-                            ),
+                                openGenerator: openGenerator,
+                                initialPromptId: navigateToPromptId
+                            )
+                            // Force view recreation when character or prompt changes
+                            .id("\(id.uuidString)-\(navigateToPromptId?.uuidString ?? "none")"),
                             isActive: Binding(
                                 get: { navigateToCharacterId != nil },
-                                set: { if !$0 { navigateToCharacterId = nil } }
+                                set: { if !$0 { 
+                                    navigateToCharacterId = nil
+                                    navigateToPromptId = nil
+                                } }
                             )
                         ) {
                             EmptyView()

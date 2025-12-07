@@ -5,6 +5,9 @@ import UIKit
 struct CharacterDetailView: View {
     @Binding var character: CharacterProfile
     let openGenerator: (String) -> Void
+    
+    /// Optional prompt ID to navigate to on appear (for deep linking)
+    var initialPromptId: UUID? = nil
 
     @EnvironmentObject var presetStore: PromptPresetStore
     @EnvironmentObject var themeManager: ThemeManager
@@ -117,6 +120,29 @@ struct CharacterDetailView: View {
         }
         // Theme is resolved locally via characterTheme - no global state management needed
         .background(characterTheme.background.ignoresSafeArea())
+        .onAppear {
+            // Navigate to initial prompt if specified (for deep linking)
+            applyInitialPromptIfNeeded()
+        }
+        .onChange(of: initialPromptId) { _, newPromptId in
+            // Handle navigation to a new prompt (when view is reused)
+            if let promptId = newPromptId,
+               let index = character.prompts.firstIndex(where: { $0.id == promptId }) {
+                selectedPromptIndex = index
+            }
+        }
+        .onChange(of: character.id) { _, _ in
+            // Reset when character changes
+            selectedPromptIndex = nil
+            applyInitialPromptIfNeeded()
+        }
+    }
+    
+    private func applyInitialPromptIfNeeded() {
+        if let promptId = initialPromptId,
+           let index = character.prompts.firstIndex(where: { $0.id == promptId }) {
+            selectedPromptIndex = index
+        }
     }
 
     // MARK: - Main Scroll View

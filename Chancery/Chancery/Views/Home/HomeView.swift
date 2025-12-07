@@ -12,6 +12,7 @@ struct HomeView: View {
     let onNavigateToScratchpad: () -> Void
     let onNavigateToCharacters: () -> Void
     let onNavigateToCharacter: ((UUID) -> Void)?
+    let onNavigateToPrompt: ((UUID, UUID) -> Void)?
     
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showImageGallery = false
@@ -178,9 +179,11 @@ struct HomeView: View {
     }
     
     private func navigateToPrompt(_ characterId: UUID, _ promptId: UUID) {
-        // Navigate to specific character (prompt navigation would require deeper integration)
-        if let callback = onNavigateToCharacter {
-            callback(characterId)
+        // Navigate to specific prompt within a character
+        if let callback = onNavigateToPrompt {
+            callback(characterId, promptId)
+        } else if let charCallback = onNavigateToCharacter {
+            charCallback(characterId)
         } else {
             onNavigateToCharacters()
         }
