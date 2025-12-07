@@ -375,17 +375,15 @@ struct ScratchpadView: View {
                     saveCurrentScratch()
                 }
                 
-                // Add to Character
-                if !characters.isEmpty {
-                    quickActionButton(
-                        icon: "person.badge.plus",
-                        label: "Add to",
-                        badge: nil,
-                        theme: theme
-                    ) {
-                        addToCharacterTitle = ""
-                        activeSheet = .addToCharacter
-                    }
+                // Add to Character (always show - can create new character even if none exist)
+                quickActionButton(
+                    icon: "person.badge.plus",
+                    label: "Add to",
+                    badge: nil,
+                    theme: theme
+                ) {
+                    addToCharacterTitle = ""
+                    activeSheet = .addToCharacter
                 }
                 
                 // Clear

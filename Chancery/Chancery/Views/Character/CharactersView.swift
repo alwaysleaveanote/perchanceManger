@@ -218,7 +218,7 @@ struct CharactersView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "dice")
-                                Text("Generate Random Character")
+                                Text("Generate A Random Character")
                             }
                             .font(.subheadline.weight(.medium))
                             .foregroundColor(theme.primary)

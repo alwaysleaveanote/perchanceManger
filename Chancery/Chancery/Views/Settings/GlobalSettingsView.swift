@@ -211,12 +211,12 @@ struct GlobalSettingsView: View {
             .buttonStyle(.plain)
 
             if isGeneratorExpanded {
+                Text("Choose which Perchance generator to open when generating images. You can select a popular generator or enter a custom one.")
+                    .font(.caption)
+                    .foregroundColor(themeManager.resolved.textSecondary)
+                    .padding(.bottom, 8)
+                
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Choose which Perchance generator to open when generating images. You can select a popular generator or enter a custom one.")
-                        .font(.caption)
-                        .foregroundColor(themeManager.resolved.textSecondary)
-                        .padding(.bottom, 8)
-                    
                     // Current selection display
                     HStack {
                         Text("Current: ")
@@ -520,11 +520,12 @@ struct GlobalSettingsView: View {
             .buttonStyle(.plain)
 
             if isOfflineStorageExpanded {
+                Text("Keep a copy of your characters, prompts, and images stored on this device. This allows you to view and use your data even without an internet connection.")
+                    .font(.caption)
+                    .foregroundColor(theme.textSecondary)
+                    .padding(.bottom, 8)
+                
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Keep a copy of your characters, prompts, and images stored on this device. This allows you to view and use your data even without an internet connection.")
-                        .font(.caption)
-                        .foregroundColor(theme.textSecondary)
-                    
                     // Toggle row
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {

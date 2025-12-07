@@ -51,12 +51,7 @@ struct AddScratchToCharacterSheet: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                     
-                    if characters.isEmpty {
-                        Text("Or select an existing character below.")
-                            .font(.caption)
-                            .fontDesign(theme.fontDesign)
-                            .foregroundColor(theme.textSecondary)
-                    } else {
+                    if !characters.isEmpty {
                         Text("Or select an existing character:")
                             .font(.caption)
                             .fontDesign(theme.fontDesign)
