@@ -77,9 +77,9 @@ struct AllImagesGallerySheet: View {
     }
     
     private var imagesByCharacter: [(character: CharacterProfile, images: [GalleryImage])] {
-        characters.compactMap { character in
+        characters.map { character in
             let images = allImages.filter { $0.characterId == character.id }
-            return images.isEmpty ? nil : (character, images)
+            return (character, images)
         }
     }
     
@@ -261,70 +261,106 @@ struct AllImagesGallerySheet: View {
         
         return VStack(alignment: .leading, spacing: 24) {
             ForEach(imagesByCharacter, id: \.character.id) { item in
-                VStack(alignment: .leading, spacing: 12) {
-                    // Character header
-                    HStack(spacing: 10) {
-                        // Profile image or placeholder
-                        if let imageData = item.character.profileImageData,
-                           let uiImage = UIImage(data: imageData) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 36, height: 36)
-                                .clipShape(Circle())
-                        } else {
-                            Circle()
-                                .fill(theme.primary.opacity(0.2))
-                                .frame(width: 36, height: 36)
-                                .overlay(
-                                    Text(String(item.character.name.prefix(1)).uppercased())
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(theme.primary)
-                                )
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.character.name)
-                                .font(.headline)
-                                .fontDesign(theme.fontDesign)
-                                .foregroundColor(theme.textPrimary)
-                            
-                            Text("\(item.images.count) images")
-                                .font(.caption)
-                                .foregroundColor(theme.textSecondary)
-                        }
+                characterCard(for: item.character, images: item.images, theme: theme)
+            }
+        }
+    }
+    
+    private func characterCard(for character: CharacterProfile, images: [GalleryImage], theme: ResolvedTheme) -> some View {
+        VStack(alignment: .leading, spacing: images.isEmpty ? 0 : 12) {
+            // Character header - tappable to navigate to character
+            Button {
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    onNavigateToCharacter?(character.id)
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    // Profile image or placeholder
+                    if let imageData = character.profileImageData,
+                       let uiImage = UIImage(data: imageData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 36, height: 36)
+                            .clipShape(Circle())
+                    } else {
+                        Circle()
+                            .fill(theme.primary.opacity(0.2))
+                            .frame(width: 36, height: 36)
+                            .overlay(
+                                Text(String(character.name.prefix(1)).uppercased())
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(theme.primary)
+                            )
                     }
                     
-                    // Images grid for this character
-                    LazyVGrid(columns: [
-                        GridItem(.flexible(), spacing: 8),
-                        GridItem(.flexible(), spacing: 8),
-                        GridItem(.flexible(), spacing: 8)
-                    ], spacing: 8) {
-                        ForEach(item.images) { galleryImage in
-                            if let uiImage = UIImage(data: galleryImage.image.data) {
-                                Button {
-                                    // Find the index in allImages
-                                    if let index = allImages.firstIndex(where: { $0.id == galleryImage.id }) {
-                                        selectedImageIndex = index
-                                    }
-                                } label: {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(height: 100)
-                                        .clipped()
-                                        .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
-                                }
-                            }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(character.name)
+                            .font(.headline)
+                            .fontDesign(theme.fontDesign)
+                            .foregroundColor(theme.textPrimary)
+                        
+                        Text(images.isEmpty ? "No images" : "\(images.count) image\(images.count == 1 ? "" : "s")")
+                            .font(.caption)
+                            .foregroundColor(theme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(theme.textSecondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            
+            // Only show image grid if there are images
+            if !images.isEmpty {
+                // Images grid for this character
+                // Make scrollable if more than 4 rows (12 images with 3 columns)
+                let needsScroll = images.count > 12
+                
+                if needsScroll {
+                    ScrollView {
+                        characterImageGrid(images: images, theme: theme)
+                    }
+                    .frame(maxHeight: 440) // ~4 rows of 100pt + spacing + padding
+                } else {
+                    characterImageGrid(images: images, theme: theme)
+                }
+            }
+        }
+        .padding(images.isEmpty ? 12 : 16)
+        .background(
+            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                .fill(theme.backgroundSecondary)
+        )
+    }
+    
+    private func characterImageGrid(images: [GalleryImage], theme: ResolvedTheme) -> some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible(), spacing: 8),
+            GridItem(.flexible(), spacing: 8),
+            GridItem(.flexible(), spacing: 8)
+        ], spacing: 8) {
+            ForEach(images) { galleryImage in
+                if let uiImage = UIImage(data: galleryImage.image.data) {
+                    Button {
+                        // Find the index in allImages
+                        if let index = allImages.firstIndex(where: { $0.id == galleryImage.id }) {
+                            selectedImageIndex = index
                         }
+                    } label: {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(height: 100)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
                     }
                 }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                        .fill(theme.backgroundSecondary)
-                )
             }
         }
     }
