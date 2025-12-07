@@ -7,8 +7,12 @@ struct PromptEditorView: View {
     let promptIndex: Int
     let openGenerator: (String) -> Void
     let onDelete: () -> Void
+    let onDuplicate: (SavedPrompt) -> Void
     
     @State private var showingDeleteConfirm: Bool = false
+    @State private var showingDuplicateAlert: Bool = false
+    @State private var duplicatePromptName: String = ""
+    @State private var showingClearConfirm: Bool = false
 
     @EnvironmentObject var presetStore: PromptPresetStore
     @EnvironmentObject var themeManager: ThemeManager
@@ -24,6 +28,7 @@ struct PromptEditorView: View {
     @State private var pendingPresetText: String = ""
     @State private var pendingPresetLabel: String = ""
     @State private var pendingPresetNameInput: String = ""
+    @State private var showCopiedToast: Bool = false
 
     private var promptBinding: Binding<SavedPrompt> {
         Binding(
@@ -53,7 +58,7 @@ struct PromptEditorView: View {
     var body: some View {
         let theme = characterTheme
         
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 20) {
             // Title + images section - Card style
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -81,12 +86,14 @@ struct PromptEditorView: View {
                     .fill(theme.backgroundSecondary)
             )
             .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
-
-            // Composed preview - Card style
+            
+            // Quick Actions Bar - matching Scratchpad style
+            quickActionsBar
+            
+            // Prompt Preview Card
             VStack(alignment: .leading, spacing: 0) {
                 PromptPreviewSection(
                     composedPrompt: composedPrompt,
-                    maxHeight: 180,
                     characterThemeId: character.characterThemeId
                 )
             }
@@ -97,116 +104,86 @@ struct PromptEditorView: View {
             )
             .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
 
-            // Decomposed sections - Card style
+            // Prompt Sections Card
             VStack(alignment: .leading, spacing: 24) {
-                Text("Prompt Sections")
-                    .font(.headline)
-                    .fontDesign(theme.fontDesign)
-                    .foregroundColor(theme.textPrimary)
-                sectionRow(
-                    label: "Physical Description",
-                    kind: .physicalDescription,
-                    text: physicalDescriptionBinding,
-                    presetName: physicalDescriptionPresetNameBinding
-                )
-
-                sectionRow(
-                    label: "Outfit",
-                    kind: .outfit,
-                    text: outfitBinding,
-                    presetName: outfitPresetNameBinding
-                )
-
-                sectionRow(
-                    label: "Pose",
-                    kind: .pose,
-                    text: poseBinding,
-                    presetName: posePresetNameBinding
-                )
-
-                sectionRow(
-                    label: "Environment",
-                    kind: .environment,
-                    text: environmentBinding,
-                    presetName: environmentPresetNameBinding
-                )
-
-                sectionRow(
-                    label: "Lighting",
-                    kind: .lighting,
-                    text: lightingBinding,
-                    presetName: lightingPresetNameBinding
-                )
-
-                sectionRow(
-                    label: "Style Modifiers",
-                    kind: .style,
-                    text: styleModifiersBinding,
-                    presetName: stylePresetNameBinding
-                )
-
-                sectionRow(
-                    label: "Technical Modifiers",
-                    kind: .technical,
-                    text: technicalModifiersBinding,
-                    presetName: technicalPresetNameBinding
-                )
-
-                sectionRow(
-                    label: "Negative Prompt",
-                    kind: .negative,
-                    text: negativePromptBinding,
-                    presetName: negativePresetNameBinding
-                )
-
-                // Additional Information
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Additional Information")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .fontDesign(characterTheme.fontDesign)
-                        .foregroundColor(characterTheme.textPrimary)
-
-                    DynamicGrowingTextEditor(
-                        text: additionalInfoBinding,
-                        placeholder: "Any extra details that don't fit in other sections",
-                        minLines: 0,
-                        maxLines: 5,
-                        characterThemeId: character.characterThemeId
-                    )
+                HStack {
+                    Text("Prompt Sections")
+                        .font(.headline)
+                        .fontDesign(theme.fontDesign)
+                        .foregroundColor(theme.textPrimary)
+                    
+                    Spacer()
+                    
+                    Button {
+                        fillWithCharacterDefaults()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.down.doc")
+                                .font(.caption)
+                            Text("Set Defaults")
+                                .font(.caption)
+                        }
+                        .foregroundColor(theme.primary)
+                    }
+                    
+                    Button {
+                        showingClearConfirm = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "trash")
+                                .font(.caption)
+                            Text("Clear")
+                                .font(.caption)
+                        }
+                        .foregroundColor(theme.error)
+                    }
                 }
+                
+                sectionsEditor
             }
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: characterTheme.cornerRadiusMedium)
-                    .fill(characterTheme.backgroundSecondary)
+                RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                    .fill(theme.backgroundSecondary)
             )
-            .shadow(color: characterTheme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
-
-            // Action buttons - Card style
-            HStack(spacing: 16) {
-                ThemedButton("Open Generator", icon: "sparkles", style: .primary) {
-                    openGeneratorForCurrentPrompt()
-                }
-
-                Spacer()
-
-                ThemedButton("Delete", icon: "trash", style: .destructive) {
-                    showingDeleteConfirm = true
-                }
+            .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+            
+            // Delete button - full width at bottom
+            ThemedButton("Delete Prompt", icon: "trash", style: .destructive) {
+                showingDeleteConfirm = true
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: characterTheme.cornerRadiusMedium)
-                    .fill(characterTheme.backgroundSecondary)
-            )
-            .shadow(color: characterTheme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+        }
+        .overlay(alignment: .top) {
+            if showCopiedToast {
+                copiedToastView
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
         .alert("Delete this prompt?", isPresented: $showingDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 onDelete()
             }
             Button("Cancel", role: .cancel) { }
+        }
+        .alert("Duplicate Prompt", isPresented: $showingDuplicateAlert) {
+            TextField("New prompt name", text: $duplicatePromptName)
+            Button("Create") {
+                let newPrompt = createDuplicatePrompt(withName: duplicatePromptName)
+                onDuplicate(newPrompt)
+            }
+            Button("Cancel", role: .cancel) {
+                duplicatePromptName = ""
+            }
+        } message: {
+            Text("Enter a name for the duplicated prompt")
+        }
+        .alert("Clear all prompt sections?", isPresented: $showingClearConfirm) {
+            Button("Clear", role: .destructive) {
+                clearAllSections()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will clear all prompt section fields. This cannot be undone.")
         }
         .sheet(isPresented: $showingPromptImagePicker) {
             ImagePicker { uiImages in
@@ -264,6 +241,278 @@ struct PromptEditorView: View {
         } message: {
             Text("Save the current text as a reusable preset for this section.")
         }
+    }
+    
+    // MARK: - Quick Actions Bar
+    
+    private var quickActionsBar: some View {
+        let theme = characterTheme
+        
+        return VStack(spacing: 12) {
+            // Primary action row
+            HStack(spacing: 10) {
+                // Copy Prompt button
+                Button {
+                    UIPasteboard.general.string = composedPrompt
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showCopiedToast = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showCopiedToast = false
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 16, weight: .medium))
+                        Text("Copy Prompt")
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .foregroundColor(theme.primary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 16)
+                    .background(theme.backgroundTertiary)
+                    .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusMedium))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                            .stroke(theme.primary.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                
+                // Open Generator - Primary action (larger)
+                Button {
+                    openGeneratorForCurrentPrompt()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text("Generate")
+                            .font(.headline.weight(.semibold))
+                    }
+                    .foregroundColor(theme.textOnPrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(
+                            colors: [theme.primary, theme.primary.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusMedium))
+                    .shadow(color: theme.primary.opacity(0.4), radius: 8, x: 0, y: 4)
+                }
+            }
+            
+            // Duplicate button - secondary action
+            Button {
+                duplicatePromptName = "\(prompt.title) (Copy)"
+                showingDuplicateAlert = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.square.on.square")
+                        .font(.system(size: 16, weight: .medium))
+                    Text("Duplicate Prompt")
+                        .font(.subheadline.weight(.medium))
+                }
+                .foregroundColor(theme.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(theme.backgroundTertiary)
+                .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusMedium))
+                .overlay(
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                        .stroke(theme.primary.opacity(0.3), lineWidth: 1)
+                )
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                .fill(theme.backgroundSecondary)
+        )
+        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+    
+    // MARK: - Copied Toast
+    
+    private var copiedToastView: some View {
+        let theme = characterTheme
+        
+        return HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(theme.textOnPrimary)
+            Text("Copied to clipboard")
+                .font(.subheadline.weight(.medium))
+                .fontDesign(theme.fontDesign)
+                .foregroundColor(theme.textOnPrimary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(theme.success)
+        )
+        .padding(.top, 8)
+    }
+    
+    // MARK: - Sections Editor
+    
+    private var sectionsEditor: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            sectionRow(
+                label: "Physical Description",
+                kind: .physicalDescription,
+                text: physicalDescriptionBinding,
+                presetName: physicalDescriptionPresetNameBinding
+            )
+
+            sectionRow(
+                label: "Outfit",
+                kind: .outfit,
+                text: outfitBinding,
+                presetName: outfitPresetNameBinding
+            )
+
+            sectionRow(
+                label: "Pose",
+                kind: .pose,
+                text: poseBinding,
+                presetName: posePresetNameBinding
+            )
+
+            sectionRow(
+                label: "Environment",
+                kind: .environment,
+                text: environmentBinding,
+                presetName: environmentPresetNameBinding
+            )
+
+            sectionRow(
+                label: "Lighting",
+                kind: .lighting,
+                text: lightingBinding,
+                presetName: lightingPresetNameBinding
+            )
+
+            sectionRow(
+                label: "Style Modifiers",
+                kind: .style,
+                text: styleModifiersBinding,
+                presetName: stylePresetNameBinding
+            )
+
+            sectionRow(
+                label: "Technical Modifiers",
+                kind: .technical,
+                text: technicalModifiersBinding,
+                presetName: technicalPresetNameBinding
+            )
+
+            sectionRow(
+                label: "Negative Prompt",
+                kind: .negative,
+                text: negativePromptBinding,
+                presetName: negativePresetNameBinding
+            )
+
+            // Additional Information
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Additional Information")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .fontDesign(characterTheme.fontDesign)
+                    .foregroundColor(characterTheme.textPrimary)
+
+                DynamicGrowingTextEditor(
+                    text: additionalInfoBinding,
+                    placeholder: "Any extra details that don't fit in other sections",
+                    minLines: 0,
+                    maxLines: 5,
+                    characterThemeId: character.characterThemeId
+                )
+            }
+        }
+    }
+    
+    // MARK: - Fill With Defaults
+    
+    private func fillWithCharacterDefaults() {
+        let globalDefaults = presetStore.globalDefaults
+        let characterDefaults = character.characterDefaults
+        
+        func effectiveDefault(_ key: GlobalDefaultKey) -> String? {
+            characterDefaults[key]?.nonEmpty ?? globalDefaults[key]?.nonEmpty
+        }
+        
+        var updated = promptBinding.wrappedValue
+        updated.physicalDescription = effectiveDefault(.physicalDescription)
+        updated.outfit = effectiveDefault(.outfit)
+        updated.pose = effectiveDefault(.pose)
+        updated.environment = effectiveDefault(.environment)
+        updated.lighting = effectiveDefault(.lighting)
+        updated.styleModifiers = effectiveDefault(.style)
+        updated.technicalModifiers = effectiveDefault(.technical)
+        updated.negativePrompt = effectiveDefault(.negative)
+        promptBinding.wrappedValue = updated
+        
+        resyncAllPresetMarkers()
+    }
+    
+    // MARK: - Clear All Sections
+    
+    private func clearAllSections() {
+        var updated = promptBinding.wrappedValue
+        updated.physicalDescription = nil
+        updated.outfit = nil
+        updated.pose = nil
+        updated.environment = nil
+        updated.lighting = nil
+        updated.styleModifiers = nil
+        updated.technicalModifiers = nil
+        updated.negativePrompt = nil
+        updated.additionalInfo = nil
+        updated.physicalDescriptionPresetName = nil
+        updated.outfitPresetName = nil
+        updated.posePresetName = nil
+        updated.environmentPresetName = nil
+        updated.lightingPresetName = nil
+        updated.stylePresetName = nil
+        updated.technicalPresetName = nil
+        updated.negativePresetName = nil
+        promptBinding.wrappedValue = updated
+    }
+    
+    // MARK: - Duplicate Prompt
+    
+    private func createDuplicatePrompt(withName name: String) -> SavedPrompt {
+        let original = prompt
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalName = trimmedName.isEmpty ? "\(original.title) (Copy)" : trimmedName
+        
+        return SavedPrompt(
+            id: UUID(),
+            title: finalName,
+            physicalDescription: original.physicalDescription,
+            outfit: original.outfit,
+            pose: original.pose,
+            environment: original.environment,
+            lighting: original.lighting,
+            styleModifiers: original.styleModifiers,
+            technicalModifiers: original.technicalModifiers,
+            negativePrompt: original.negativePrompt,
+            additionalInfo: original.additionalInfo,
+            physicalDescriptionPresetName: original.physicalDescriptionPresetName,
+            outfitPresetName: original.outfitPresetName,
+            posePresetName: original.posePresetName,
+            environmentPresetName: original.environmentPresetName,
+            lightingPresetName: original.lightingPresetName,
+            stylePresetName: original.stylePresetName,
+            technicalPresetName: original.technicalPresetName,
+            negativePresetName: original.negativePresetName,
+            images: [] // Don't copy images
+        )
     }
     
     // MARK: - Open Generator

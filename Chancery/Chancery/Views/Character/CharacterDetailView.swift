@@ -13,7 +13,6 @@ struct CharacterDetailView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) private var dismiss
 
-    @State private var isSidebarVisible: Bool = false
     @State private var selectedPromptIndex: Int? = nil
 
     // Character-wide gallery
@@ -32,34 +31,13 @@ struct CharacterDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            mainScrollView
-
-            // Sidebar overlay
-            if isSidebarVisible {
-                Color.black.opacity(0.25)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isSidebarVisible = false
-                        }
-                    }
-
-                HStack {
-                    Spacer()
-                    sidebar
-                        .frame(width: 260)
-                        .padding(.trailing, 8)
-                        .transition(.move(edge: .trailing))
-                }
-            }
-        }
+        mainScrollView
         .navigationTitle(character.name.isEmpty ? "Character" : character.name)
         .navigationBarTitleDisplayMode(.inline)
         .characterThemedNavigationBar(characterThemeId: character.characterThemeId)
-        .navigationBarBackButtonHidden(selectedPromptIndex != nil)
+        .navigationBarBackButtonHidden(selectedPromptIndex != nil || isEditingCharacterInfo)
         .toolbar {
-            // Custom back button when viewing a prompt - goes to overview instead of character list
+            // Custom back button when viewing a prompt or editing character info
             ToolbarItem(placement: .navigationBarLeading) {
                 if selectedPromptIndex != nil {
                     Button {
@@ -73,19 +51,19 @@ struct CharacterDetailView: View {
                         }
                         .foregroundColor(characterTheme.primary)
                     }
-                }
-            }
-            
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isSidebarVisible.toggle()
-                    }
-                } label: {
-                    Image(systemName: isSidebarVisible ? "line.3.horizontal.decrease" : "line.3.horizontal")
+                } else if isEditingCharacterInfo {
+                    Button {
+                        // Auto-save and dismiss
+                        isEditingCharacterInfo = false
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .medium))
+                        }
                         .foregroundColor(characterTheme.primary)
+                    }
                 }
-                .accessibilityLabel("Toggle saved prompts sidebar")
             }
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -136,6 +114,12 @@ struct CharacterDetailView: View {
             selectedPromptIndex = nil
             applyInitialPromptIfNeeded()
         }
+        .onDisappear {
+            // Auto-save when view disappears while editing
+            if isEditingCharacterInfo {
+                isEditingCharacterInfo = false
+            }
+        }
     }
     
     private func applyInitialPromptIfNeeded() {
@@ -175,6 +159,10 @@ struct CharacterDetailView: View {
                         } else {
                             selectedPromptIndex = nil
                         }
+                    },
+                    onDuplicate: { newPrompt in
+                        character.prompts.append(newPrompt)
+                        selectedPromptIndex = character.prompts.count - 1
                     }
                 )
             } else {
@@ -185,136 +173,91 @@ struct CharacterDetailView: View {
                         galleryStartIndex = index
                         showingGallery = true
                     },
+                    onPromptTap: { index in
+                        selectedPromptIndex = index
+                    },
+                    onCreatePrompt: {
+                        createNewPrompt()
+                    },
+                    onOpenSettings: {
+                        showingSettings = true
+                    },
+                    onDeletePrompt: { index in
+                        if character.prompts.indices.contains(index) {
+                            character.prompts.remove(at: index)
+                        }
+                    },
+                    onDuplicatePrompt: { index, newName in
+                        duplicatePrompt(at: index, withName: newName)
+                    },
                     isEditingInfo: $isEditingCharacterInfo
                 )
             }
         }
     }
 
-    // MARK: - Sidebar
-
-    private var sidebar: some View {
-        let theme = characterTheme
+        // MARK: - Actions
+    
+    private func createNewPrompt() {
+        let globalDefaults = presetStore.globalDefaults
+        let characterDefaults = character.characterDefaults
         
-        return VStack(alignment: .leading, spacing: 12) {
-            Button(action: {
-                // Capture globalDefaults to avoid main actor isolation issues
-                let globalDefaults = presetStore.globalDefaults
-                let characterDefaults = character.characterDefaults
-                
-                func effectiveDefault(_ key: GlobalDefaultKey) -> String? {
-                    characterDefaults[key]?.nonEmpty
-                        ?? globalDefaults[key]?.nonEmpty
-                }
-
-                let newPrompt = SavedPrompt(
-                    title: "New Prompt",
-                    text: "",
-                    physicalDescription: effectiveDefault(.physicalDescription),
-                    outfit:              effectiveDefault(.outfit),
-                    pose:                effectiveDefault(.pose),
-                    environment:         effectiveDefault(.environment),
-                    lighting:            effectiveDefault(.lighting),
-                    styleModifiers:      effectiveDefault(.style),
-                    technicalModifiers:  effectiveDefault(.technical),
-                    negativePrompt:      effectiveDefault(.negative)
-                )
-
-                character.prompts.append(newPrompt)
-                selectedPromptIndex = character.prompts.count - 1
-
-                withAnimation {
-                    isSidebarVisible = false
-                }
-            }) {
-                Text("Create New Prompt")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .fontDesign(theme.fontDesign)
-                    .foregroundColor(theme.primary)
-            }
-
-            Divider()
-                .background(theme.divider)
-
-            DisclosureGroup(
-                isExpanded: .constant(true),
-                content: {
-                    if character.prompts.isEmpty {
-                        Text("No saved prompts yet.")
-                            .font(.caption)
-                            .fontDesign(theme.fontDesign)
-                            .foregroundColor(theme.textSecondary)
-                            .padding(.top, 4)
-                    } else {
-                        VStack(alignment: .leading, spacing: 4) {
-                            ForEach(character.prompts.indices, id: \.self) { index in
-                                let prompt = character.prompts[index]
-                                Button {
-                                    selectedPromptIndex = index
-                                    withAnimation {
-                                        isSidebarVisible = false
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(prompt.title.isEmpty ? "Untitled Prompt" : prompt.title)
-                                            .font(.subheadline)
-                                            .fontDesign(theme.fontDesign)
-                                            .foregroundColor(
-                                                selectedPromptIndex == index ? theme.primary : theme.textPrimary
-                                            )
-                                        Spacer()
-                                    }
-                                    .padding(.vertical, 4)
-                                    .padding(.leading, 12)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.top, 4)
-                    }
-                },
-                label: {
-                    Text("Saved Prompts")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .fontDesign(theme.fontDesign)
-                        .foregroundColor(theme.textPrimary)
-                }
-            )
-            .tint(theme.primary)
-            
-            // Character Settings button
-            Button {
-                print("[CharacterDetailView] Settings button tapped - opening settings sheet")
-                withAnimation {
-                    isSidebarVisible = false
-                }
-                // Small delay to let sidebar close before showing sheet
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    showingSettings = true
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "gearshape")
-                    Text("Character Settings")
-                }
-                .font(.subheadline.weight(.semibold))
-                .fontDesign(theme.fontDesign)
-                .foregroundColor(theme.primary)
-                .padding(.top, 12)
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
+        func effectiveDefault(_ key: GlobalDefaultKey) -> String? {
+            characterDefaults[key]?.nonEmpty
+                ?? globalDefaults[key]?.nonEmpty
         }
-        .padding(12)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .background(
-            characterTheme.backgroundSecondary
-        )
-    }
 
+        let newPrompt = SavedPrompt(
+            title: "New Prompt",
+            text: "",
+            physicalDescription: effectiveDefault(.physicalDescription),
+            outfit:              effectiveDefault(.outfit),
+            pose:                effectiveDefault(.pose),
+            environment:         effectiveDefault(.environment),
+            lighting:            effectiveDefault(.lighting),
+            styleModifiers:      effectiveDefault(.style),
+            technicalModifiers:  effectiveDefault(.technical),
+            negativePrompt:      effectiveDefault(.negative)
+        )
+
+        character.prompts.append(newPrompt)
+        selectedPromptIndex = character.prompts.count - 1
+    }
+    
+    private func duplicatePrompt(at index: Int, withName name: String) {
+        guard character.prompts.indices.contains(index) else { return }
+        
+        let original = character.prompts[index]
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalName = trimmedName.isEmpty ? "\(original.title) (Copy)" : trimmedName
+        
+        let newPrompt = SavedPrompt(
+            id: UUID(),
+            title: finalName,
+            physicalDescription: original.physicalDescription,
+            outfit: original.outfit,
+            pose: original.pose,
+            environment: original.environment,
+            lighting: original.lighting,
+            styleModifiers: original.styleModifiers,
+            technicalModifiers: original.technicalModifiers,
+            negativePrompt: original.negativePrompt,
+            additionalInfo: original.additionalInfo,
+            physicalDescriptionPresetName: original.physicalDescriptionPresetName,
+            outfitPresetName: original.outfitPresetName,
+            posePresetName: original.posePresetName,
+            environmentPresetName: original.environmentPresetName,
+            lightingPresetName: original.lightingPresetName,
+            stylePresetName: original.stylePresetName,
+            technicalPresetName: original.technicalPresetName,
+            negativePresetName: original.negativePresetName,
+            images: [] // Don't copy images
+        )
+        
+        character.prompts.append(newPrompt)
+        selectedPromptIndex = character.prompts.count - 1
+    }
+    
     // MARK: - Images collection (character-wide)
 
     private func allPromptImages() -> [PromptImage] {

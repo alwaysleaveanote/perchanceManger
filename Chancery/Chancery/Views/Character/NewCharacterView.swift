@@ -7,8 +7,6 @@ struct NewCharacterView: View {
     @EnvironmentObject var themeManager: ThemeManager
 
     @State private var name: String = ""
-    @State private var bio: String = ""
-    @State private var notes: String = ""
 
     let onCreate: (CharacterProfile) -> Void
 
@@ -17,29 +15,13 @@ struct NewCharacterView: View {
         
         NavigationView {
             Form {
-                Section(header: Text("New Character")
+                Section(header: Text("Character Name")
                     .foregroundColor(theme.textSecondary)
                     .fontDesign(theme.fontDesign)
                 ) {
-                    DynamicGrowingTextEditor(
-                        text: $name,
-                        placeholder: "Name",
-                        minLines: 0,
-                        maxLines: 10
-                    )
-
-                    DynamicGrowingTextEditor(
-                        text: $bio,
-                        placeholder: "Bio / description",
-                        minLines: 0,
-                        maxLines: 10
-                    )
-
-                    DynamicGrowingTextEditor(
-                        text: $notes,
-                        placeholder: "Notes (optional)",
-                        minLines: 0,
-                        maxLines: 10
+                    ThemedTextField(
+                        placeholder: "Enter character name",
+                        text: $name
                     )
                 }
                 .listRowBackground(theme.backgroundSecondary)
@@ -62,8 +44,7 @@ struct NewCharacterView: View {
                         guard !trimmedName.isEmpty else { return }
                         let character = CharacterProfile(
                             name: trimmedName,
-                            bio: bio,
-                            notes: notes,
+                            bio: "",
                             prompts: []
                         )
                         onCreate(character)

@@ -152,14 +152,18 @@ struct ContentView: View {
                 selectedTab = .characters
             },
             onNavigateToCharacter: { characterId in
-                navigateToPromptId = nil
-                navigateToCharacterId = characterId
-                selectedTab = .characters
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    navigateToPromptId = nil
+                    navigateToCharacterId = characterId
+                    selectedTab = .characters
+                }
             },
             onNavigateToPrompt: { characterId, promptId in
-                navigateToPromptId = promptId
-                navigateToCharacterId = characterId
-                selectedTab = .characters
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    navigateToPromptId = promptId
+                    navigateToCharacterId = characterId
+                    selectedTab = .characters
+                }
             }
         )
         .tabItem {
@@ -174,7 +178,14 @@ struct ContentView: View {
             scratchpadPrompt: $scratchpadPrompt,
             scratchpadSaved: $scratchpadSaved,
             characters: characters,
-            openGenerator: openGenerator
+            openGenerator: openGenerator,
+            onNavigateToPrompt: { characterId, promptId in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    navigateToPromptId = promptId
+                    navigateToCharacterId = characterId
+                    selectedTab = .characters
+                }
+            }
         )
         .tabItem {
             Label(Tab.scratchpad.title, systemImage: tabIcon(for: .scratchpad))

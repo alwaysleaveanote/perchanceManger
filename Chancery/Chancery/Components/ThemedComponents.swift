@@ -256,6 +256,7 @@ struct ThemedTextField: View {
     let placeholder: String
     @Binding var text: String
     var characterThemeId: String? = nil
+    var showClearButton: Bool = true
     
     @EnvironmentObject var themeManager: ThemeManager
     @FocusState private var isFocused: Bool
@@ -265,23 +266,36 @@ struct ThemedTextField: View {
     }
     
     var body: some View {
-        TextField(placeholder, text: $text)
-            .font(.subheadline)
-            .fontDesign(theme.fontDesign)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                    .fill(theme.backgroundTertiary)
-            )
-            .foregroundColor(theme.textPrimary)
-            .overlay(
-                RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                    .stroke(isFocused ? theme.primary : theme.border.opacity(0.5), lineWidth: isFocused ? 2 : 1)
-            )
-            .shadow(color: theme.shadow.opacity(0.05), radius: 2, x: 0, y: 1)
-            .focused($isFocused)
-            .animation(.easeInOut(duration: 0.15), value: isFocused)
+        HStack(spacing: 8) {
+            TextField(placeholder, text: $text)
+                .font(.subheadline)
+                .fontDesign(theme.fontDesign)
+                .foregroundColor(theme.textPrimary)
+            
+            if showClearButton && !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(theme.textSecondary.opacity(0.6))
+                        .font(.system(size: 16))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                .fill(theme.backgroundTertiary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                .stroke(isFocused ? theme.primary : theme.border.opacity(0.5), lineWidth: isFocused ? 2 : 1)
+        )
+        .shadow(color: theme.shadow.opacity(0.05), radius: 2, x: 0, y: 1)
+        .focused($isFocused)
+        .animation(.easeInOut(duration: 0.15), value: isFocused)
     }
 }
 
@@ -337,13 +351,13 @@ struct ThemedNavigationTitle: ViewModifier {
         let titleFont: UIFont
         switch themeData.typography.fontFamily {
         case "serif":
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.serif)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.serif)!, size: 20)
         case "rounded":
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.rounded)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.rounded)!, size: 20)
         case "monospaced":
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.monospaced)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.monospaced)!, size: 20)
         default:
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.default)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.default)!, size: 20)
         }
         
         // Title text attributes - use primary color and theme font
@@ -364,10 +378,10 @@ struct ThemedNavigationTitle: ViewModifier {
         appearance.buttonAppearance = buttonAppearance
         appearance.doneButtonAppearance = buttonAppearance
         
-        // Note: We no longer set UINavigationBar.appearance() globally here
-        // because it causes theme flash issues when navigating between views with different themes.
-        // Instead, we rely on SwiftUI's .tint(), .toolbarBackground(), and .toolbarColorScheme() modifiers.
-        // The appearance is set per-view rather than globally.
+        // Apply the appearance globally
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
     
     private var colorScheme: ColorScheme {
@@ -442,13 +456,13 @@ struct CharacterThemedNavigationTitle: ViewModifier {
         let titleFont: UIFont
         switch themeData.typography.fontFamily {
         case "serif":
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.serif)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.serif)!, size: 20)
         case "rounded":
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.rounded)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.rounded)!, size: 20)
         case "monospaced":
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.monospaced)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.monospaced)!, size: 20)
         default:
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.default)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.default)!, size: 20)
         }
         
         appearance.titleTextAttributes = [
@@ -466,6 +480,11 @@ struct CharacterThemedNavigationTitle: ViewModifier {
         ]
         appearance.buttonAppearance = buttonAppearance
         appearance.doneButtonAppearance = buttonAppearance
+        
+        // Apply the appearance globally
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
     
     private var colorScheme: ColorScheme {
@@ -532,13 +551,13 @@ struct GlobalThemedNavigationTitle: ViewModifier {
         let titleFont: UIFont
         switch themeData.typography.fontFamily {
         case "serif":
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.serif)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.serif)!, size: 20)
         case "rounded":
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.rounded)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.rounded)!, size: 20)
         case "monospaced":
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.monospaced)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.monospaced)!, size: 20)
         default:
-            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.default)!, size: 18)
+            titleFont = UIFont(descriptor: UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline).withDesign(.default)!, size: 20)
         }
         
         // Title text attributes - use primary color and theme font
@@ -688,22 +707,18 @@ struct ThemePreviewCard: View {
         // Fallback icons based on theme id
         switch theme.id {
         case "default": return "circle.grid.2x2"
-        case "cyberwave": return "bolt.fill"
         case "pastel": return "cloud.fill"
         case "darkfantasy": return "moon.stars.fill"
         case "cottagecore": return "leaf.fill"
         case "vaporwave": return "waveform"
         case "minimalist": return "square"
         case "neonrave": return "sparkles"
-        case "steampunk": return "gearshape.2.fill"
         case "fae": return "sparkle"
         case "druidic": return "tree.fill"
         case "ocean": return "water.waves"
         case "adventure": return "map.fill"
-        case "bubblegum": return "heart.fill"
         case "lego": return "building.2.fill"
         case "nerdy": return "book.fill"
-        case "paladin": return "shield.fill"
         default: return "paintpalette.fill"
         }
     }

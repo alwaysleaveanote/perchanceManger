@@ -12,8 +12,8 @@ struct AddScratchToCharacterSheet: View {
     
     @State private var showingNewCharacterForm = false
     @State private var newCharacterName = ""
-    @State private var newCharacterBio = ""
-    @State private var newCharacterNotes = ""
+    @State private var showNameRequiredToast = false
+    @State private var toastMessage = ""
 
     var body: some View {
         let theme = themeManager.resolved
@@ -25,7 +25,15 @@ struct AddScratchToCharacterSheet: View {
                     .fontDesign(theme.fontDesign)
                     .foregroundColor(theme.textPrimary)
 
-                ThemedTextField(placeholder: "Prompt title (required)", text: $title)
+                VStack(alignment: .leading, spacing: 4) {
+                    ThemedTextField(placeholder: "Prompt title (required)", text: $title)
+                    
+                    if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text("Enter a name for this prompt before adding to a character")
+                            .font(.caption)
+                            .foregroundColor(theme.textSecondary)
+                    }
+                }
                 
                 if showingNewCharacterForm {
                     // New character creation form
@@ -59,24 +67,26 @@ struct AddScratchToCharacterSheet: View {
                         
                         List {
                             ForEach(characters) { character in
-                                let disabled = title
+                                let titleEmpty = title
                                     .trimmingCharacters(in: .whitespacesAndNewlines)
                                     .isEmpty
                                 Button {
                                     let trimmed = title
                                         .trimmingCharacters(in: .whitespacesAndNewlines)
-                                    guard !trimmed.isEmpty else { return }
+                                    if trimmed.isEmpty {
+                                        showNameRequiredFeedback()
+                                        return
+                                    }
                                     onAdd(character.id, trimmed)
                                     dismiss()
                                 } label: {
                                     HStack {
                                         Text(character.name.isEmpty ? "Untitled Character" : character.name)
                                             .fontDesign(theme.fontDesign)
-                                            .foregroundColor(theme.textPrimary)
+                                            .foregroundColor(titleEmpty ? theme.textSecondary : theme.textPrimary)
                                         Spacer()
                                     }
                                 }
-                                .disabled(disabled)
                                 .listRowBackground(theme.backgroundSecondary)
                             }
                         }
@@ -101,6 +111,61 @@ struct AddScratchToCharacterSheet: View {
                     }
                 }
             }
+            .overlay(alignment: .top) {
+                if showNameRequiredToast {
+                    nameRequiredToastView
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+        }
+    }
+    
+    private var nameRequiredToastView: some View {
+        let theme = themeManager.resolved
+        return HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundColor(theme.textOnPrimary)
+            Text(toastMessage)
+                .font(.subheadline.weight(.medium))
+                .fontDesign(theme.fontDesign)
+                .foregroundColor(theme.textOnPrimary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(theme.warning)
+        )
+        .padding(.top, 8)
+    }
+    
+    private func showNameRequiredFeedback() {
+        toastMessage = "Please enter a prompt name first"
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showNameRequiredToast = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showNameRequiredToast = false
+            }
+        }
+    }
+    
+    private func showMissingFieldsFeedback(promptName: Bool, characterName: Bool) {
+        if !promptName && !characterName {
+            toastMessage = "Please enter prompt name and character name"
+        } else if !promptName {
+            toastMessage = "Please enter a prompt name"
+        } else {
+            toastMessage = "Please enter a character name"
+        }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showNameRequiredToast = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showNameRequiredToast = false
+            }
         }
     }
     
@@ -108,7 +173,6 @@ struct AddScratchToCharacterSheet: View {
         let theme = themeManager.resolved
         let titleTrimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let nameTrimmed = newCharacterName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let canCreate = !titleTrimmed.isEmpty && !nameTrimmed.isEmpty
         
         return VStack(alignment: .leading, spacing: 12) {
             Text("New Character")
@@ -117,15 +181,15 @@ struct AddScratchToCharacterSheet: View {
             
             ThemedTextField(placeholder: "Character name (required)", text: $newCharacterName)
             
-            ThemedTextField(placeholder: "Bio (optional)", text: $newCharacterBio)
-            
-            ThemedTextField(placeholder: "Notes (optional)", text: $newCharacterNotes)
-            
             Button {
+                // Validate both fields
+                if titleTrimmed.isEmpty || nameTrimmed.isEmpty {
+                    showMissingFieldsFeedback(promptName: !titleTrimmed.isEmpty, characterName: !nameTrimmed.isEmpty)
+                    return
+                }
                 let newCharacter = CharacterProfile(
                     name: nameTrimmed,
-                    bio: newCharacterBio.trimmingCharacters(in: .whitespacesAndNewlines),
-                    notes: newCharacterNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+                    bio: ""
                 )
                 onCreateNewCharacter(newCharacter, titleTrimmed)
                 dismiss()
@@ -136,12 +200,11 @@ struct AddScratchToCharacterSheet: View {
                         .font(.headline)
                     Spacer()
                 }
-                .foregroundColor(canCreate ? theme.textOnPrimary : theme.textSecondary)
+                .foregroundColor(theme.textOnPrimary)
                 .padding(14)
-                .background(canCreate ? theme.primary : theme.backgroundTertiary)
+                .background(theme.primary)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
-            .disabled(!canCreate)
         }
     }
 }

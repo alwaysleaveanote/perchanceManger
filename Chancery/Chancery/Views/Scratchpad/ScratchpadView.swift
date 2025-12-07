@@ -14,6 +14,9 @@ struct ScratchpadView: View {
     @Binding var characters: [CharacterProfile]
 
     let openGenerator: (String) -> Void
+    
+    /// Callback to navigate to a specific prompt within a character
+    var onNavigateToPrompt: ((UUID, UUID) -> Void)? = nil
 
     @EnvironmentObject var presetStore: PromptPresetStore
     @EnvironmentObject var themeManager: ThemeManager
@@ -72,6 +75,12 @@ struct ScratchpadView: View {
     
     // Clear confirmation
     @State private var showClearConfirmation: Bool = false
+    
+    // Copy feedback toast
+    @State private var showCopiedToast: Bool = false
+    
+    // Toast for missing prompt name
+    @State private var showNameRequiredToast: Bool = false
 
     // MARK: - Composed scratch prompt
 
@@ -156,6 +165,18 @@ struct ScratchpadView: View {
                                 }
                                 .foregroundColor(theme.primary)
                             }
+                            
+                            Button {
+                                showClearConfirmation = true
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "trash")
+                                        .font(.caption)
+                                    Text("Clear")
+                                        .font(.caption)
+                                }
+                                .foregroundColor(theme.error)
+                            }
                         }
                         
                         sectionsEditor
@@ -174,35 +195,6 @@ struct ScratchpadView: View {
             .navigationBarTitleDisplayMode(.inline)
             .themedNavigationBar()
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button {
-                            activeSheet = .savedScratches
-                        } label: {
-                            Label("Saved Scratches" + (scratchpadSaved.isEmpty ? "" : " (\(scratchpadSaved.count))"), systemImage: "tray.full")
-                        }
-                        
-                        Button {
-                            saveCurrentScratch()
-                        } label: {
-                            Label("Save Current", systemImage: "square.and.arrow.down")
-                        }
-                        
-                        if !characters.isEmpty {
-                            Button {
-                                addToCharacterTitle = ""
-                                activeSheet = .addToCharacter
-                            } label: {
-                                Label("Add to Character", systemImage: "person.badge.plus")
-                            }
-                        }
-                        
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .font(.system(size: 18))
-                            .foregroundColor(theme.primary)
-                    }
-                }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button {
@@ -294,6 +286,34 @@ struct ScratchpadView: View {
         } message: {
             Text("Are you sure you want to clear all fields? This cannot be undone.")
         }
+        .overlay(alignment: .top) {
+            if showCopiedToast {
+                copiedToastView
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+    }
+    
+    // MARK: - Copied Toast
+    
+    private var copiedToastView: some View {
+        let theme = themeManager.resolved
+        
+        return HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(theme.textOnPrimary)
+            Text("Copied to clipboard")
+                .font(.subheadline.weight(.medium))
+                .fontDesign(theme.fontDesign)
+                .foregroundColor(theme.textOnPrimary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(theme.success)
+        )
+        .padding(.top, 8)
     }
 
     // MARK: - Quick Actions Bar
@@ -307,6 +327,14 @@ struct ScratchpadView: View {
                 // Copy Prompt button
                 Button {
                     UIPasteboard.general.string = composedScratchPrompt
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showCopiedToast = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showCopiedToast = false
+                        }
+                    }
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "doc.on.doc")
@@ -355,10 +383,10 @@ struct ScratchpadView: View {
             
             // Secondary actions row
             HStack(spacing: 10) {
-                // Saved Scratches
+                // Bookmarked Scratches
                 quickActionButton(
-                    icon: "tray.full",
-                    label: "History",
+                    icon: "bookmark.fill",
+                    label: "Bookmarks",
                     badge: scratchpadSaved.isEmpty ? nil : "\(scratchpadSaved.count)",
                     theme: theme
                 ) {
@@ -384,17 +412,6 @@ struct ScratchpadView: View {
                 ) {
                     addToCharacterTitle = ""
                     activeSheet = .addToCharacter
-                }
-                
-                // Clear
-                quickActionButton(
-                    icon: "trash",
-                    label: "Clear",
-                    badge: nil,
-                    theme: theme,
-                    isDestructive: true
-                ) {
-                    showClearConfirmation = true
                 }
             }
         }
@@ -805,6 +822,11 @@ struct ScratchpadView: View {
 
         guard let index = characters.firstIndex(where: { $0.id == characterId }) else { return }
         characters[index].prompts.append(newPrompt)
+        
+        // Navigate to the newly added prompt
+        if let callback = onNavigateToPrompt {
+            callback(characterId, newPrompt.id)
+        }
     }
     
     private func createCharacterAndAddPrompt(_ newCharacter: CharacterProfile, promptTitle: String) {
@@ -835,6 +857,11 @@ struct ScratchpadView: View {
         var characterWithPrompt = newCharacter
         characterWithPrompt.prompts.append(newPrompt)
         characters.insert(characterWithPrompt, at: 0)
+        
+        // Navigate to the newly added prompt
+        if let callback = onNavigateToPrompt {
+            callback(characterWithPrompt.id, newPrompt.id)
+        }
     }
 
     private func loadScratch(_ prompt: SavedPrompt) {

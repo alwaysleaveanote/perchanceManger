@@ -10,6 +10,7 @@ struct SavedScratchSheetView: View {
     
     @State private var promptToDelete: SavedPrompt? = nil
     @State private var showingDeleteConfirmation = false
+    @State private var showingClearAllConfirmation = false
     @State private var searchText = ""
     
     private var filteredPrompts: [SavedPrompt] {
@@ -54,7 +55,7 @@ struct SavedScratchSheetView: View {
                 
                 List {
                     if scratchpadSaved.isEmpty {
-                        Text("No saved scratch prompts yet.")
+                        Text("No bookmarked scratches yet.")
                             .foregroundColor(theme.textSecondary)
                             .fontDesign(theme.fontDesign)
                     } else if filteredPrompts.isEmpty {
@@ -90,15 +91,33 @@ struct SavedScratchSheetView: View {
                                 showingDeleteConfirmation = true
                             }
                         }
+                        
+                        // Clear All section at bottom of list
+                        Section {
+                            Button {
+                                showingClearAllConfirmation = true
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    Text("Clear All Bookmarks")
+                                        .font(.subheadline)
+                                        .foregroundColor(theme.error)
+                                    Spacer()
+                                }
+                            }
+                            .listRowBackground(Color.clear)
+                        }
                     }
                 }
                 .themedList()
             }
             .themedBackground()
-            .navigationTitle("Saved Scratches")
+            .navigationTitle("Bookmarked Scratches")
             .navigationBarTitleDisplayMode(.inline)
             .themedNavigationBar()
-            .alert("Delete Saved Scratch?", isPresented: $showingDeleteConfirmation) {
+            .toolbar {
+            }
+            .alert("Delete Bookmark?", isPresented: $showingDeleteConfirmation) {
                 Button("Delete", role: .destructive) {
                     if let prompt = promptToDelete,
                        let index = scratchpadSaved.firstIndex(where: { $0.id == prompt.id }) {
@@ -113,8 +132,16 @@ struct SavedScratchSheetView: View {
                 if let prompt = promptToDelete {
                     Text("Are you sure you want to delete \"\(prompt.title)\"?")
                 } else {
-                    Text("Are you sure you want to delete this saved scratch?")
+                    Text("Are you sure you want to delete this bookmark?")
                 }
+            }
+            .alert("Clear All Bookmarks?", isPresented: $showingClearAllConfirmation) {
+                Button("Clear All", role: .destructive) {
+                    scratchpadSaved.removeAll()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Are you sure you want to delete all \(scratchpadSaved.count) bookmarked scratches? This cannot be undone.")
             }
         }
     }

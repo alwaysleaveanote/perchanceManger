@@ -195,14 +195,14 @@ struct CharactersView: View {
                                         .listRowBackground(Color.clear)
                                         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                                         .listRowSeparator(.hidden)
-                                    }
-                                }
-                                .onDelete { indices in
-                                    // Map filtered indices back to original array
-                                    let charactersToDelete = indices.compactMap { filteredCharacters.indices.contains($0) ? filteredCharacters[$0] : nil }
-                                    if let first = charactersToDelete.first {
-                                        characterToDelete = first
-                                        showingDeleteConfirmation = true
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                            Button(role: .destructive) {
+                                                characterToDelete = character
+                                                showingDeleteConfirmation = true
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
                                     }
                                 }
                             }

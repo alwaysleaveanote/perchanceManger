@@ -60,10 +60,7 @@ struct GlobalSettingsView: View {
             .dismissKeyboardOnDrag()
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(isLightTheme(globalTheme) ? .light : .dark, for: .navigationBar)
-            .toolbarBackground(theme.background, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .tint(theme.primary)
+            .themedNavigationBar()
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -167,16 +164,24 @@ struct GlobalSettingsView: View {
                     .foregroundColor(themeManager.resolved.textSecondary)
                     .padding(.bottom, 8)
 
-                ThemePicker(
-                    title: "Global Theme",
-                    selectedThemeId: themeManager.globalThemeId,
-                    showInheritOption: false,
-                    onSelect: { themeId in
-                        if let id = themeId {
-                            themeManager.setGlobalTheme(id)
+                VStack(alignment: .leading, spacing: 0) {
+                    ThemePicker(
+                        title: "Global Theme",
+                        selectedThemeId: themeManager.globalThemeId,
+                        showInheritOption: false,
+                        onSelect: { themeId in
+                            if let id = themeId {
+                                themeManager.setGlobalTheme(id)
+                            }
                         }
-                    }
+                    )
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                        .fill(theme.backgroundSecondary)
                 )
+                .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
             }
         }
     }

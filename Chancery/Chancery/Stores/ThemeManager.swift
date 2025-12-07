@@ -46,15 +46,16 @@ final class ThemeManager: ObservableObject {
     }
     
     private enum Defaults {
-        static let themeId = "default"
+        static let themeId = "ocean"
     }
     
     /// Names of bundled theme JSON files (without extension)
+    /// Organized by similarity: minimalist light → medium styled light → maximally styled light → dark themes
     private static let bundledThemeNames = [
-        "pastel", "adventure", "cyberwave",
-        "fae", "paladin", "druidic", "bubblegum", "lego",
-        "nerdy", "neonrave", "darkfantasy", "cottagecore",
-        "ocean", "steampunk", "vaporwave", "minimalist"
+        "minimalist", "cottagecore", "fae",
+        "ocean", "druidic", "lego",
+        "pastel", "adventure",
+        "darkfantasy", "neonrave", "vaporwave", "nerdy"
     ]
     
     // MARK: - Published Properties

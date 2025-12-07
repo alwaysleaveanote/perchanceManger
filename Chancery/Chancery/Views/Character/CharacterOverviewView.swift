@@ -7,6 +7,11 @@ struct CharacterOverviewView: View {
 
     let allImages: [PromptImage]
     let onImageTap: (Int) -> Void
+    let onPromptTap: (Int) -> Void
+    let onCreatePrompt: () -> Void
+    let onOpenSettings: () -> Void
+    let onDeletePrompt: (Int) -> Void
+    let onDuplicatePrompt: (Int, String) -> Void  // index, new name
 
     @Binding var isEditingInfo: Bool
     @EnvironmentObject var themeManager: ThemeManager
@@ -16,6 +21,12 @@ struct CharacterOverviewView: View {
     @State private var showAddLinkForm: Bool = false
     @State private var showingProfileImagePicker: Bool = false
     @State private var showingProfileImageViewer: Bool = false
+    @State private var showNameRequiredToast: Bool = false
+    @State private var showingDuplicateAlert: Bool = false
+    @State private var duplicatePromptIndex: Int? = nil
+    @State private var duplicatePromptName: String = ""
+    @State private var showingDeleteConfirm: Bool = false
+    @State private var deletePromptIndex: Int? = nil
     
     /// The theme for this character - resolved locally
     private var characterTheme: ResolvedTheme {
@@ -37,6 +48,9 @@ struct CharacterOverviewView: View {
             
             // Gallery Card
             galleryCard
+            
+            // Prompts Card
+            promptsCard
 
             Spacer(minLength: 0)
         }
@@ -61,6 +75,71 @@ struct CharacterOverviewView: View {
             )
             .environmentObject(themeManager)
         }
+        .overlay(alignment: .top) {
+            if showNameRequiredToast {
+                nameRequiredToastView
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .alert("Delete this prompt?", isPresented: $showingDeleteConfirm) {
+            Button("Delete", role: .destructive) {
+                if let index = deletePromptIndex {
+                    onDeletePrompt(index)
+                }
+                deletePromptIndex = nil
+            }
+            Button("Cancel", role: .cancel) {
+                deletePromptIndex = nil
+            }
+        }
+        .alert("Duplicate Prompt", isPresented: $showingDuplicateAlert) {
+            TextField("New prompt name", text: $duplicatePromptName)
+            Button("Create") {
+                if let index = duplicatePromptIndex {
+                    onDuplicatePrompt(index, duplicatePromptName)
+                }
+                duplicatePromptIndex = nil
+                duplicatePromptName = ""
+            }
+            Button("Cancel", role: .cancel) {
+                duplicatePromptIndex = nil
+                duplicatePromptName = ""
+            }
+        } message: {
+            Text("Enter a name for the duplicated prompt")
+        }
+    }
+    
+    // MARK: - Toast Views
+    
+    private var nameRequiredToastView: some View {
+        let theme = characterTheme
+        return HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundColor(theme.textOnPrimary)
+            Text("Character name is required")
+                .font(.subheadline.weight(.medium))
+                .fontDesign(theme.fontDesign)
+                .foregroundColor(theme.textOnPrimary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(theme.warning)
+        )
+        .padding(.top, 8)
+    }
+    
+    private func showNameRequiredFeedback() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showNameRequiredToast = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showNameRequiredToast = false
+            }
+        }
     }
     
     // MARK: - Profile Card
@@ -68,35 +147,43 @@ struct CharacterOverviewView: View {
     private var profileCard: some View {
         let theme = characterTheme
         
-        return VStack(spacing: 12) {
-            // Edit button at top left
-            HStack {
-                Button {
-                    withAnimation {
-                        isEditingInfo.toggle()
+        return HStack(alignment: .top, spacing: 12) {
+            // Edit button aligned with top of profile image
+            Button {
+                if isEditingInfo {
+                    // Trying to save - validate name
+                    let trimmedName = character.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if trimmedName.isEmpty {
+                        showNameRequiredFeedback()
+                        return
                     }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: isEditingInfo ? "checkmark" : "pencil")
-                            .font(.system(size: 12, weight: .medium))
-                        Text(isEditingInfo ? "Done" : "Edit")
-                            .font(.caption.weight(.medium))
-                    }
-                    .foregroundColor(theme.primary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(theme.primary.opacity(0.12))
-                    )
                 }
-                .buttonStyle(.plain)
-                
-                Spacer()
+                withAnimation {
+                    isEditingInfo.toggle()
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: isEditingInfo ? "checkmark" : "pencil")
+                        .font(.system(size: 12, weight: .medium))
+                    Text(isEditingInfo ? "Done" : "Edit")
+                        .font(.caption.weight(.medium))
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+                .foregroundColor(theme.primary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(theme.primary.opacity(0.12))
+                )
             }
-            .padding(.horizontal, 12)
+            .buttonStyle(.plain)
+            .fixedSize()
             
-            // Profile image - large circular for profile page
+            Spacer()
+            
+            // Profile image - centered
             Button {
                 if character.profileImageData != nil {
                     // Show enlarged image viewer
@@ -112,15 +199,15 @@ struct CharacterOverviewView: View {
                         Image(uiImage: uiImage)
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 160, height: 160)
+                            .frame(width: 200, height: 200)
                             .clipShape(Circle())
                     } else {
                         Circle()
                             .fill(theme.backgroundTertiary)
-                            .frame(width: 160, height: 160)
+                            .frame(width: 200, height: 200)
                             .overlay(
                                 Image(systemName: "person.fill")
-                                    .font(.system(size: 64))
+                                    .font(.system(size: 80))
                                     .foregroundColor(theme.textSecondary.opacity(0.5))
                             )
                     }
@@ -140,9 +227,25 @@ struct CharacterOverviewView: View {
                 }
             }
             .buttonStyle(.plain)
+            
+            Spacer()
+            
+            // Settings button aligned with top of profile image
+            Button {
+                onOpenSettings()
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(theme.primary)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .fill(theme.primary.opacity(0.12))
+                    )
+            }
+            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
+        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
                 .fill(theme.backgroundSecondary)
@@ -150,7 +253,7 @@ struct CharacterOverviewView: View {
         .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
-    // MARK: - Info Card (Bio & Notes)
+    // MARK: - Info Card (Bio)
     
     /// Maximum height for scrollable text sections (approximately 15 lines)
     private let maxTextHeight: CGFloat = 300
@@ -165,6 +268,24 @@ struct CharacterOverviewView: View {
         let theme = characterTheme
         
         return VStack(alignment: .leading, spacing: 16) {
+            // Name Section (only visible when editing)
+            if isEditingInfo {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Name")
+                        .font(.subheadline.weight(.semibold))
+                        .fontDesign(theme.fontDesign)
+                        .foregroundColor(theme.textPrimary)
+                    
+                    ThemedTextField(
+                        placeholder: "Character name",
+                        text: $character.name,
+                        characterThemeId: character.characterThemeId
+                    )
+                }
+                
+                ThemedDivider()
+            }
+            
             // Bio Section
             VStack(alignment: .leading, spacing: 8) {
                 Text("Bio")
@@ -192,37 +313,9 @@ struct CharacterOverviewView: View {
                     }
                 }
             }
-
-            ThemedDivider()
-
-            // Notes Section
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Notes")
-                    .font(.subheadline.weight(.semibold))
-                    .fontDesign(theme.fontDesign)
-                    .foregroundColor(theme.textPrimary)
-
-                if isEditingInfo {
-                    DynamicGrowingTextEditor(
-                        text: $character.notes,
-                        placeholder: "Any extra notes about this character",
-                        minLines: 1,
-                        maxLines: 10,
-                        fontSize: 14,
-                        characterThemeId: character.characterThemeId
-                    )
-                } else {
-                    if character.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text("No notes yet.")
-                            .font(.caption)
-                            .fontDesign(theme.fontDesign)
-                            .foregroundColor(theme.textSecondary)
-                    } else {
-                        scrollableTextView(text: character.notes, theme: theme)
-                    }
-                }
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity)
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
@@ -341,22 +434,9 @@ struct CharacterOverviewView: View {
 
             // Links list
             if character.links.isEmpty && !showAddLinkForm {
-                HStack {
-                    Spacer()
-                    VStack(spacing: 8) {
-                        Image(systemName: "link.circle")
-                            .font(.system(size: 32))
-                            .foregroundColor(theme.textSecondary.opacity(0.4))
-                        Text("No links yet")
-                            .font(.caption)
-                            .foregroundColor(theme.textSecondary)
-                        Text("Tap + to add reference links")
-                            .font(.caption2)
-                            .foregroundColor(theme.textSecondary.opacity(0.7))
-                    }
-                    .padding(.vertical, 16)
-                    Spacer()
-                }
+                Text("Tap + to add reference links")
+                    .font(.caption)
+                    .foregroundColor(theme.textSecondary)
             } else if !character.links.isEmpty {
                 // Make scrollable if more than 4 links
                 if character.links.count > 4 {
@@ -518,11 +598,7 @@ struct CharacterOverviewView: View {
                     }
                 }
 
-                Text("Tap to view full-screen")
-                    .font(.caption2)
-                    .fontDesign(theme.fontDesign)
-                    .foregroundColor(theme.textSecondary)
-            }
+                }
         }
         .padding(16)
         .background(
@@ -530,6 +606,134 @@ struct CharacterOverviewView: View {
                 .fill(theme.backgroundSecondary)
         )
         .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+    
+    // MARK: - Prompts Card
+    
+    private var promptsCard: some View {
+        let theme = characterTheme
+        
+        return VStack(alignment: .leading, spacing: 12) {
+            // Header with create button
+            HStack {
+                Text("Prompts")
+                    .font(.subheadline.weight(.semibold))
+                    .fontDesign(theme.fontDesign)
+                    .foregroundColor(theme.textPrimary)
+                
+                Spacer()
+                
+                Button {
+                    onCreatePrompt()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("New")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundColor(theme.textOnPrimary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(theme.primary)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            
+            if character.prompts.isEmpty {
+                Text("No prompts yet. Tap + New to create one.")
+                    .font(.caption)
+                    .foregroundColor(theme.textSecondary)
+            } else {
+                // Use List for swipe actions support
+                let maxHeight: CGFloat = character.prompts.count > 5 ? 280 : CGFloat(character.prompts.count * 56 + 8)
+                
+                List {
+                    ForEach(Array(character.prompts.enumerated()), id: \.element.id) { index, prompt in
+                        promptRowContent(index: index, prompt: prompt, theme: theme)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    deletePromptIndex = index
+                                    showingDeleteConfirm = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                
+                                Button {
+                                    duplicatePromptIndex = index
+                                    duplicatePromptName = "\(prompt.title) (Copy)"
+                                    showingDuplicateAlert = true
+                                } label: {
+                                    Label("Duplicate", systemImage: "doc.on.doc")
+                                }
+                                .tint(theme.primary)
+                            }
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .frame(height: maxHeight)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                .fill(theme.backgroundSecondary)
+        )
+        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+    
+    private func promptRowContent(index: Int, prompt: SavedPrompt, theme: ResolvedTheme) -> some View {
+        Button {
+            onPromptTap(index)
+        } label: {
+            HStack(spacing: 12) {
+                // Prompt icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(theme.primary.opacity(0.12))
+                        .frame(width: 36, height: 36)
+                    
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(theme.primary)
+                }
+                
+                // Prompt info
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(prompt.title.isEmpty ? "Untitled Prompt" : prompt.title)
+                        .font(.subheadline.weight(.medium))
+                        .fontDesign(theme.fontDesign)
+                        .foregroundColor(theme.textPrimary)
+                        .lineLimit(1)
+                    
+                    if !prompt.images.isEmpty {
+                        Text("\(prompt.images.count) image\(prompt.images.count == 1 ? "" : "s")")
+                            .font(.caption2)
+                            .foregroundColor(theme.textSecondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.medium))
+                    .foregroundColor(theme.textSecondary)
+            }
+            .padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                    .fill(theme.backgroundTertiary)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
