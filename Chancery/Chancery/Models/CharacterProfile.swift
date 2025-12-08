@@ -59,6 +59,12 @@ struct CharacterProfile: Identifiable, Codable, Equatable {
     /// Profile image data (PNG/JPEG encoded)
     var profileImageData: Data?
     
+    /// Standalone images not attached to any specific prompt
+    ///
+    /// These images appear in the character's gallery and "Your Creations"
+    /// but aren't associated with a particular prompt.
+    var standaloneImages: [PromptImage]
+    
     /// Related links (reference images, inspiration boards, etc.)
     var links: [RelatedLink]
     
@@ -91,6 +97,7 @@ struct CharacterProfile: Identifiable, Codable, Equatable {
     ///   - notes: Private notes
     ///   - prompts: Initial prompts (defaults to empty)
     ///   - profileImageData: Profile image data
+    ///   - standaloneImages: Images not attached to prompts
     ///   - links: Related links
     ///   - characterDefaults: Per-character defaults
     ///   - characterDefaultPerchanceGenerator: Generator override
@@ -102,6 +109,7 @@ struct CharacterProfile: Identifiable, Codable, Equatable {
         notes: String = "",
         prompts: [SavedPrompt] = [],
         profileImageData: Data? = nil,
+        standaloneImages: [PromptImage] = [],
         links: [RelatedLink] = [],
         characterDefaults: [GlobalDefaultKey: String] = [:],
         characterDefaultPerchanceGenerator: String? = nil,
@@ -113,6 +121,7 @@ struct CharacterProfile: Identifiable, Codable, Equatable {
         self.notes = notes
         self.prompts = prompts
         self.profileImageData = profileImageData
+        self.standaloneImages = standaloneImages
         self.links = links
         self.characterDefaults = characterDefaults
         self.characterDefaultPerchanceGenerator = characterDefaultPerchanceGenerator
@@ -134,9 +143,19 @@ extension CharacterProfile {
         prompts.count
     }
     
-    /// The total number of images across all prompts
+    /// The total number of images across all prompts and standalone images
     var totalImageCount: Int {
-        prompts.reduce(0) { $0 + $1.imageCount }
+        prompts.reduce(0) { $0 + $1.imageCount } + standaloneImages.count
+    }
+    
+    /// All images for this character (prompt images + standalone images)
+    var allImages: [PromptImage] {
+        var images: [PromptImage] = []
+        for prompt in prompts {
+            images.append(contentsOf: prompt.images)
+        }
+        images.append(contentsOf: standaloneImages)
+        return images
     }
     
     /// Whether this character has any custom defaults set

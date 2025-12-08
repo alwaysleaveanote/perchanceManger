@@ -415,6 +415,26 @@ Start entries below this line:
 11. `PromptPresetStoreTests.swift` - PromptPresetStore
 12. `DataStoreTests.swift` - CloudKitSyncStatus, starter character
 
+### 4.6 [2025-12-07] – Image Zoom, Features Section Redesign, Standalone Images
+
+**Summary**  
+- Added pinch-to-zoom and double-tap-to-zoom for all enlarged images
+- Redesigned "What You Can Do" section to look less like buttons
+- Moved tour action into features section with natural integration
+- Added standalone images feature for characters (images not attached to prompts)
+
+**Files / Modules Touched**  
+- `Components/ZoomableImage.swift` (new) - Reusable zoomable image component
+- `Views/Character/CharacterOverviewView.swift` - Updated ProfileImageViewer to use ZoomableImage, added gallery image picker
+- `Views/Scratchpad/AllImagesGallerySheet.swift` - Updated SwipeableImageViewer to use ZoomableImage, added standalone images support
+- `Views/Home/HomeView.swift` - Redesigned featuresSection, moved tour action, added standalone images to gallery
+- `Models/CharacterProfile.swift` - Added `standaloneImages: [PromptImage]` property
+
+**Features**  
+- **ZoomableImage**: Pinch-to-zoom (1x-5x), double-tap to toggle zoom, drag to pan when zoomed
+- **Standalone Images**: Upload images directly to character without attaching to prompts, appear in gallery and "Your Creations"
+- **Features Section**: Circular icons with subtle backgrounds, divider before tour action, chevron indicator
+
 5. OPEN QUESTIONS & TODOs FOR ARCHITECTURE (LIVING SECTION – EDITABLE)
 
 For unresolved architectural decisions by either AI or humans.

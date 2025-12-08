@@ -27,7 +27,7 @@ struct HomeView: View {
         }
     }
     
-    /// All images with full metadata for gallery (includes profile images, avoids duplicates)
+    /// All images with full metadata for gallery (includes profile images, standalone images, avoids duplicates)
     private var allGalleryImages: [AllImagesGallerySheet.GalleryImage] {
         var result: [AllImagesGallerySheet.GalleryImage] = []
         var seenImageData = Set<Data>()
@@ -45,6 +45,23 @@ struct HomeView: View {
                         promptTitle: prompt.title,
                         promptId: prompt.id,
                         isProfileImage: false
+                    ))
+                }
+            }
+            
+            // Add standalone images
+            for image in character.standaloneImages {
+                if !seenImageData.contains(image.data) {
+                    seenImageData.insert(image.data)
+                    result.append(AllImagesGallerySheet.GalleryImage(
+                        id: image.id,
+                        image: image,
+                        characterName: character.name,
+                        characterId: character.id,
+                        promptTitle: "Gallery Image",
+                        promptId: UUID(), // Placeholder - not a real prompt
+                        isProfileImage: false,
+                        isStandaloneImage: true
                     ))
                 }
             }
@@ -77,6 +94,14 @@ struct HomeView: View {
                 for image in prompt.images {
                     seenImageData.insert(image.data)
                     result.append((image, character.name, prompt.title))
+                }
+            }
+            
+            // Add standalone images
+            for image in character.standaloneImages {
+                if !seenImageData.contains(image.data) {
+                    seenImageData.insert(image.data)
+                    result.append((image, character.name, "Gallery Image"))
                 }
             }
             
@@ -238,20 +263,6 @@ struct HomeView: View {
                 .foregroundColor(theme.textSecondary)
                 .lineSpacing(4)
                 .padding(.top, 8)
-            
-            // Tour button
-            Button {
-                showAppTour = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "questionmark.circle")
-                        .font(.subheadline.weight(.medium))
-                    Text("Take me on a tour")
-                        .font(.subheadline.weight(.medium))
-                }
-                .foregroundColor(theme.primary)
-            }
-            .padding(.top, 4)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -421,40 +432,77 @@ struct HomeView: View {
     private var featuresSection: some View {
         let theme = themeManager.resolved
         
-        return VStack(alignment: .leading, spacing: 16) {
+        return VStack(alignment: .leading, spacing: 20) {
             Text("What You Can Do")
                 .font(.title3.weight(.semibold))
                 .fontDesign(theme.fontDesign)
                 .foregroundColor(theme.textPrimary)
             
-            VStack(spacing: 12) {
-                featureRow(
+            VStack(alignment: .leading, spacing: 16) {
+                featureItem(
                     icon: "square.and.pencil",
                     title: "Scratchpad",
                     description: "Quickly compose prompts with structured sections for physical description, outfit, pose, and more.",
                     theme: theme
                 )
                 
-                featureRow(
+                featureItem(
                     icon: "person.crop.rectangle.stack",
                     title: "Character Profiles",
                     description: "Save and organize characters with their own prompts, images, and custom settings.",
                     theme: theme
                 )
                 
-                featureRow(
+                featureItem(
                     icon: "star.fill",
                     title: "Presets & Defaults",
                     description: "Create reusable presets for common styles, poses, and settings to speed up your workflow.",
                     theme: theme
                 )
                 
-                featureRow(
+                featureItem(
                     icon: "paintpalette.fill",
                     title: "Custom Themes",
                     description: "Personalize the app with themes that match your style.",
                     theme: theme
                 )
+            }
+            
+            // Divider
+            Rectangle()
+                .fill(theme.divider)
+                .frame(height: 1)
+                .padding(.vertical, 4)
+            
+            // Tour action - integrated naturally
+            Button {
+                showAppTour = true
+            } label: {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(theme.primary.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(theme.primary)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Take a Tour")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(theme.textPrimary)
+                        Text("Learn how to get the most out of Chancery")
+                            .font(.caption)
+                            .foregroundColor(theme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(theme.textSecondary.opacity(0.6))
+                }
             }
         }
         .padding(20)
@@ -464,12 +512,16 @@ struct HomeView: View {
         )
     }
     
-    private func featureRow(icon: String, title: String, description: String, theme: ResolvedTheme) -> some View {
+    private func featureItem(icon: String, title: String, description: String, theme: ResolvedTheme) -> some View {
         HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(theme.primary)
-                .frame(width: 28)
+            ZStack {
+                Circle()
+                    .fill(theme.primary.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(theme.primary)
+            }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -481,13 +533,9 @@ struct HomeView: View {
                     .foregroundColor(theme.textSecondary)
                     .lineSpacing(2)
             }
+            
+            Spacer(minLength: 0)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                .fill(theme.backgroundTertiary)
-        )
     }
     
     // MARK: - Call to Action Section

@@ -31,6 +31,7 @@ struct AllImagesGallerySheet: View {
         let promptTitle: String
         let promptId: UUID
         var isProfileImage: Bool = false
+        var isStandaloneImage: Bool = false
         
         static func == (lhs: GalleryImage, rhs: GalleryImage) -> Bool {
             lhs.id == rhs.id
@@ -54,6 +55,23 @@ struct AllImagesGallerySheet: View {
                         promptTitle: prompt.title,
                         promptId: prompt.id,
                         isProfileImage: false
+                    ))
+                }
+            }
+            
+            // Add standalone images
+            for image in character.standaloneImages {
+                if !seenImageData.contains(image.data) {
+                    seenImageData.insert(image.data)
+                    result.append(GalleryImage(
+                        id: image.id,
+                        image: image,
+                        characterName: character.name,
+                        characterId: character.id,
+                        promptTitle: "Gallery Image",
+                        promptId: UUID(), // Placeholder - not a real prompt
+                        isProfileImage: false,
+                        isStandaloneImage: true
                     ))
                 }
             }
@@ -438,14 +456,11 @@ struct SwipeableImageViewer: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 
-                // Swipeable image area with drag-to-dismiss
+                // Swipeable zoomable image area with drag-to-dismiss
                 TabView(selection: $selectedIndex) {
                     ForEach(Array(images.enumerated()), id: \.element.id) { index, galleryImage in
                         if let uiImage = UIImage(data: galleryImage.image.data) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            ZoomableImage(uiImage: uiImage)
                                 .padding(.horizontal, 16)
                                 .tag(index)
                         }

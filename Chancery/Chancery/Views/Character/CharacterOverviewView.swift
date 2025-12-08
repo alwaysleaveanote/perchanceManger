@@ -21,6 +21,7 @@ struct CharacterOverviewView: View {
     @State private var showAddLinkForm: Bool = false
     @State private var showingProfileImagePicker: Bool = false
     @State private var showingProfileImageViewer: Bool = false
+    @State private var showingGalleryImagePicker: Bool = false
     @State private var showNameRequiredToast: Bool = false
     @State private var showingDuplicateAlert: Bool = false
     @State private var duplicatePromptIndex: Int? = nil
@@ -61,6 +62,15 @@ struct CharacterOverviewView: View {
                     character.profileImageData = data
                 }
             }
+        }
+        .sheet(isPresented: $showingGalleryImagePicker) {
+            ImagePicker(onImagesPicked: { images in
+                for image in images {
+                    if let data = image.jpegData(compressionQuality: 0.9) {
+                        character.standaloneImages.append(PromptImage(data: data))
+                    }
+                }
+            }, selectionLimit: 0)
         }
         .fullScreenCover(isPresented: $showingProfileImageViewer) {
             ProfileImageViewer(
@@ -523,13 +533,37 @@ struct CharacterOverviewView: View {
         let theme = characterTheme
         
         return VStack(alignment: .leading, spacing: 12) {
-            Text("Image Gallery")
-                .font(.subheadline.weight(.semibold))
-                .fontDesign(theme.fontDesign)
-                .foregroundColor(theme.textPrimary)
+            // Header with add button
+            HStack {
+                Text("Image Gallery")
+                    .font(.subheadline.weight(.semibold))
+                    .fontDesign(theme.fontDesign)
+                    .foregroundColor(theme.textPrimary)
+                
+                Spacer()
+                
+                Button {
+                    showingGalleryImagePicker = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Add")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundColor(theme.textOnPrimary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(theme.primary)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
 
             if allImages.isEmpty {
-                Text("No images yet. Profile image and prompt images will appear here.")
+                Text("No images yet. Tap + Add to upload images for this character.")
                     .font(.caption)
                     .fontDesign(theme.fontDesign)
                     .foregroundColor(theme.textSecondary)
@@ -551,8 +585,7 @@ struct CharacterOverviewView: View {
                         }
                     }
                 }
-
-                }
+            }
         }
         .themedCard(characterThemeId: character.characterThemeId)
     }
@@ -736,12 +769,9 @@ struct ProfileImageViewer: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 
-                // Image
+                // Zoomable Image
                 if let data = imageData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    ZoomableImage(uiImage: uiImage)
                         .padding(16)
                 } else {
                     Spacer()
