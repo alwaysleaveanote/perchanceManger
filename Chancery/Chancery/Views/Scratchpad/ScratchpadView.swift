@@ -137,12 +137,7 @@ struct ScratchpadView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         PromptPreviewSection(composedPrompt: composedScratchPrompt)
                     }
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                            .fill(theme.backgroundSecondary)
-                    )
-                    .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+                    .themedCard()
                     
                     // Prompt Sections Card
                     VStack(alignment: .leading, spacing: 24) {
@@ -181,12 +176,7 @@ struct ScratchpadView: View {
                         
                         sectionsEditor
                     }
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                            .fill(theme.backgroundSecondary)
-                    )
-                    .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+                    .themedCard()
                 }
                 .padding()
             }
@@ -286,34 +276,7 @@ struct ScratchpadView: View {
         } message: {
             Text("Are you sure you want to clear all fields? This cannot be undone.")
         }
-        .overlay(alignment: .top) {
-            if showCopiedToast {
-                copiedToastView
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-    }
-    
-    // MARK: - Copied Toast
-    
-    private var copiedToastView: some View {
-        let theme = themeManager.resolved
-        
-        return HStack(spacing: 8) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(theme.textOnPrimary)
-            Text("Copied to clipboard")
-                .font(.subheadline.weight(.medium))
-                .fontDesign(theme.fontDesign)
-                .foregroundColor(theme.textOnPrimary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(
-            Capsule()
-                .fill(theme.success)
-        )
-        .padding(.top, 8)
+        .toast(isPresented: $showCopiedToast, message: "Copied to clipboard", style: .success)
     }
 
     // MARK: - Quick Actions Bar
@@ -415,12 +378,7 @@ struct ScratchpadView: View {
                 }
             }
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                .fill(theme.backgroundSecondary)
-        )
-        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+        .themedCard()
     }
     
     private func quickActionButton(

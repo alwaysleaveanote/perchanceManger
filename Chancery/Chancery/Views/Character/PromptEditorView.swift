@@ -83,12 +83,7 @@ struct PromptEditorView: View {
                     imagesSection
                 }
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                    .fill(theme.backgroundSecondary)
-            )
-            .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+            .themedCard(characterThemeId: character.characterThemeId)
             
             // Quick Actions Bar - matching Scratchpad style
             quickActionsBar
@@ -100,12 +95,7 @@ struct PromptEditorView: View {
                     characterThemeId: character.characterThemeId
                 )
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                    .fill(theme.backgroundSecondary)
-            )
-            .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+            .themedCard(characterThemeId: character.characterThemeId)
 
             // Prompt Sections Card
             VStack(alignment: .leading, spacing: 24) {
@@ -144,24 +134,14 @@ struct PromptEditorView: View {
                 
                 sectionsEditor
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                    .fill(theme.backgroundSecondary)
-            )
-            .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+            .themedCard(characterThemeId: character.characterThemeId)
             
             // Delete button - full width at bottom
             ThemedButton("Delete Prompt", icon: "trash", style: .destructive) {
                 showingDeleteConfirm = true
             }
         }
-        .overlay(alignment: .top) {
-            if showCopiedToast {
-                copiedToastView
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
+        .toast(isPresented: $showCopiedToast, message: "Copied to clipboard", style: .success, characterThemeId: character.characterThemeId)
         .alert("Delete this prompt?", isPresented: $showingDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 onDelete()
@@ -440,34 +420,7 @@ struct PromptEditorView: View {
                 }
             }
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                .fill(theme.backgroundSecondary)
-        )
-        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
-    }
-    
-    // MARK: - Copied Toast
-    
-    private var copiedToastView: some View {
-        let theme = characterTheme
-        
-        return HStack(spacing: 8) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(theme.textOnPrimary)
-            Text("Copied to clipboard")
-                .font(.subheadline.weight(.medium))
-                .fontDesign(theme.fontDesign)
-                .foregroundColor(theme.textOnPrimary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(
-            Capsule()
-                .fill(theme.success)
-        )
-        .padding(.top, 8)
+        .themedCard(characterThemeId: character.characterThemeId)
     }
     
     // MARK: - Sections Editor

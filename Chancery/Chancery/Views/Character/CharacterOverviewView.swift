@@ -75,12 +75,7 @@ struct CharacterOverviewView: View {
             )
             .environmentObject(themeManager)
         }
-        .overlay(alignment: .top) {
-            if showNameRequiredToast {
-                nameRequiredToastView
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
+        .toast(isPresented: $showNameRequiredToast, message: "Character name is required", style: .warning, characterThemeId: character.characterThemeId)
         .alert("Delete this prompt?", isPresented: $showingDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 if let index = deletePromptIndex {
@@ -110,36 +105,10 @@ struct CharacterOverviewView: View {
         }
     }
     
-    // MARK: - Toast Views
-    
-    private var nameRequiredToastView: some View {
-        let theme = characterTheme
-        return HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.circle.fill")
-                .foregroundColor(theme.textOnPrimary)
-            Text("Character name is required")
-                .font(.subheadline.weight(.medium))
-                .fontDesign(theme.fontDesign)
-                .foregroundColor(theme.textOnPrimary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(
-            Capsule()
-                .fill(theme.warning)
-        )
-        .padding(.top, 8)
-    }
+    // MARK: - Toast Helper
     
     private func showNameRequiredFeedback() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            showNameRequiredToast = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                showNameRequiredToast = false
-            }
-        }
+        showNameRequiredToast = true
     }
     
     // MARK: - Profile Card
@@ -245,12 +214,7 @@ struct CharacterOverviewView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                .fill(theme.backgroundSecondary)
-        )
-        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+        .themedCard(characterThemeId: character.characterThemeId)
     }
 
     // MARK: - Info Card (Bio)
@@ -316,12 +280,7 @@ struct CharacterOverviewView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                .fill(theme.backgroundSecondary)
-        )
-        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+        .themedCard(characterThemeId: character.characterThemeId)
     }
     
     /// A text view that becomes scrollable when content exceeds 15 lines
@@ -458,12 +417,7 @@ struct CharacterOverviewView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                .fill(theme.backgroundSecondary)
-        )
-        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+        .themedCard(characterThemeId: character.characterThemeId)
     }
     
     /// Individual link row with modern styling
@@ -600,12 +554,7 @@ struct CharacterOverviewView: View {
 
                 }
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                .fill(theme.backgroundSecondary)
-        )
-        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+        .themedCard(characterThemeId: character.characterThemeId)
     }
     
     // MARK: - Prompts Card
@@ -683,12 +632,7 @@ struct CharacterOverviewView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                .fill(theme.backgroundSecondary)
-        )
-        .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
+        .themedCard(characterThemeId: character.characterThemeId)
     }
     
     private func promptRowContent(index: Int, prompt: SavedPrompt, theme: ResolvedTheme) -> some View {

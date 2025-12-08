@@ -776,3 +776,57 @@ struct ThemePreviewCard: View {
         )
     }
 }
+
+// MARK: - Character Themed Card Modifier
+
+/// A view modifier that applies consistent card styling with background, corner radius, and shadow.
+/// Supports character-specific theming.
+struct CharacterThemedCardModifier: ViewModifier {
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    let characterThemeId: String?
+    let includeShadow: Bool
+    let padding: CGFloat
+    
+    private var theme: ResolvedTheme {
+        if let themeId = characterThemeId {
+            return themeManager.resolvedTheme(forCharacterThemeId: themeId)
+        }
+        return themeManager.resolved
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(
+                RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                    .fill(theme.backgroundSecondary)
+            )
+            .shadow(
+                color: includeShadow ? theme.shadow.opacity(0.06) : .clear,
+                radius: includeShadow ? 8 : 0,
+                x: 0,
+                y: includeShadow ? 2 : 0
+            )
+    }
+}
+
+extension View {
+    /// Applies themed card styling with background, corner radius, and optional shadow.
+    /// Supports character-specific theming.
+    /// - Parameters:
+    ///   - characterThemeId: Optional character theme ID for character-specific styling
+    ///   - includeShadow: Whether to include a subtle shadow (default: true)
+    ///   - padding: Internal padding (default: 16)
+    func themedCard(
+        characterThemeId: String? = nil,
+        includeShadow: Bool = true,
+        padding: CGFloat = 16
+    ) -> some View {
+        modifier(CharacterThemedCardModifier(
+            characterThemeId: characterThemeId,
+            includeShadow: includeShadow,
+            padding: padding
+        ))
+    }
+}

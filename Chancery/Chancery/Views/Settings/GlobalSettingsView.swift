@@ -133,215 +133,154 @@ struct GlobalSettingsView: View {
     // MARK: - Theme Section
 
     private var themeSection: some View {
-        let theme = themeManager.resolved
-        
-        return VStack(alignment: .leading, spacing: 8) {
-            Button(action: {
-                withAnimation {
-                    isThemeExpanded.toggle()
+        CollapsibleSection(
+            title: "App Theme",
+            description: "Choose a visual theme for the entire app. Character-specific themes can override this in character settings.",
+            isExpanded: $isThemeExpanded
+        ) {
+            ThemePicker(
+                title: "Global Theme",
+                selectedThemeId: themeManager.globalThemeId,
+                showInheritOption: false,
+                onSelect: { themeId in
+                    if let id = themeId {
+                        themeManager.setGlobalTheme(id)
+                    }
                 }
-            }) {
-                HStack {
-                    Text("App Theme")
-                        .font(.title3)
-                        .bold()
-                        .fontDesign(theme.fontDesign)
-                        .foregroundColor(theme.textPrimary)
-
-                    Spacer()
-
-                    Image(systemName: isThemeExpanded ? "chevron.down" : "chevron.right")
-                        .font(.subheadline)
-                        .foregroundColor(theme.textSecondary)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            if isThemeExpanded {
-                Text("Choose a visual theme for the entire app. Character-specific themes can override this in character settings.")
-                    .font(.caption)
-                    .foregroundColor(themeManager.resolved.textSecondary)
-                    .padding(.bottom, 8)
-
-                VStack(alignment: .leading, spacing: 0) {
-                    ThemePicker(
-                        title: "Global Theme",
-                        selectedThemeId: themeManager.globalThemeId,
-                        showInheritOption: false,
-                        onSelect: { themeId in
-                            if let id = themeId {
-                                themeManager.setGlobalTheme(id)
-                            }
-                        }
-                    )
-                }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                        .fill(theme.backgroundSecondary)
-                )
-                .shadow(color: theme.shadow.opacity(0.06), radius: 8, x: 0, y: 2)
-            }
+            )
         }
     }
 
     // MARK: - Generator Section
 
     private var generatorSection: some View {
+        CollapsibleSection(
+            title: "Default Perchance Generator",
+            description: "Choose which Perchance generator to open when generating images. You can select a popular generator or enter a custom one.",
+            isExpanded: $isGeneratorExpanded
+        ) {
+            generatorSectionContent
+        }
+    }
+    
+    private var generatorSectionContent: some View {
         let theme = themeManager.resolved
         let isUsingCustom = !perchanceGenerators.contains(where: { $0.name == presetStore.defaultPerchanceGenerator })
         
-        return VStack(alignment: .leading, spacing: 8) {
-            Button(action: {
-                withAnimation {
-                    isGeneratorExpanded.toggle()
-                }
-            }) {
-                HStack {
-                    Text("Default Perchance Generator")
-                        .font(.title3)
-                        .bold()
-                        .fontDesign(theme.fontDesign)
-                        .foregroundColor(theme.textPrimary)
-
-                    Spacer()
-
-                    Image(systemName: isGeneratorExpanded ? "chevron.down" : "chevron.right")
-                        .font(.subheadline)
-                        .foregroundColor(theme.textSecondary)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            if isGeneratorExpanded {
-                Text("Choose which Perchance generator to open when generating images. You can select a popular generator or enter a custom one.")
-                    .font(.caption)
-                    .foregroundColor(themeManager.resolved.textSecondary)
-                    .padding(.bottom, 8)
+        return VStack(alignment: .leading, spacing: 12) {
+            // Current selection display
+            HStack {
+                Text("Current: ")
+                    .font(.subheadline)
+                    .foregroundColor(theme.textSecondary)
+                Text(presetStore.defaultPerchanceGenerator)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(theme.textPrimary)
                 
-                VStack(alignment: .leading, spacing: 12) {
-                    // Current selection display
-                    HStack {
-                        Text("Current: ")
-                            .font(.subheadline)
-                            .foregroundColor(theme.textSecondary)
-                        Text(presetStore.defaultPerchanceGenerator)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(theme.textPrimary)
-                        
-                        Spacer()
-                        
-                        Button {
-                            if let url = URL(string: "https://perchance.org/\(presetStore.defaultPerchanceGenerator)") {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            Text("Open")
-                                .font(.caption.weight(.medium))
-                                .foregroundColor(theme.primary)
-                        }
+                Spacer()
+                
+                Button {
+                    if let url = URL(string: "https://perchance.org/\(presetStore.defaultPerchanceGenerator)") {
+                        UIApplication.shared.open(url)
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                            .fill(theme.backgroundSecondary)
-                    )
-                    
-                    // Predefined generators
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Popular Generators")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(theme.textSecondary)
-                        
-                        ScrollView {
-                            VStack(spacing: 6) {
-                                ForEach(perchanceGenerators) { option in
-                                    Button {
-                                        presetStore.defaultPerchanceGenerator = option.name
-                                        customGeneratorName = ""
-                                    } label: {
-                                        HStack {
-                                            Image(systemName: presetStore.defaultPerchanceGenerator == option.name ? "checkmark.circle.fill" : "circle")
-                                                .foregroundColor(presetStore.defaultPerchanceGenerator == option.name ? theme.primary : theme.textSecondary)
-                                            
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(option.title.isEmpty ? option.name : option.title)
-                                                    .font(.subheadline)
-                                                    .foregroundColor(theme.textPrimary)
-                                                if !option.description.isEmpty {
-                                                    Text(option.description)
-                                                        .font(.caption2)
-                                                        .foregroundColor(theme.textSecondary)
-                                                        .lineLimit(1)
-                                                }
-                                            }
-                                            
-                                            Spacer()
-                                        }
-                                        .padding(.vertical, 8)
-                                        .padding(.horizontal, 12)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                                                .fill(presetStore.defaultPerchanceGenerator == option.name ? theme.primary.opacity(0.1) : theme.backgroundTertiary)
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
-                        .frame(maxHeight: 320) // Approximately 8 items
-                    }
-
-                    ThemedDivider()
-
-                    // Custom generator section
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Custom Generator")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(theme.textSecondary)
-                        
-                        Text("Enter the slug from any perchance.org generator URL")
-                            .font(.caption)
-                            .foregroundColor(theme.textSecondary)
-
-                        HStack(spacing: 8) {
-                            ThemedTextField(placeholder: "e.g. best-ai-image-generator", text: $customGeneratorName)
-                            
+                } label: {
+                    Text("Open")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(theme.primary)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                    .fill(theme.backgroundTertiary)
+            )
+            
+            // Predefined generators
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Popular Generators")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(theme.textSecondary)
+                
+                ScrollView {
+                    VStack(spacing: 6) {
+                        ForEach(perchanceGenerators) { option in
                             Button {
-                                let trimmed = customGeneratorName.trimmingCharacters(in: .whitespacesAndNewlines)
-                                guard !trimmed.isEmpty else { return }
-                                presetStore.defaultPerchanceGenerator = trimmed
+                                presetStore.defaultPerchanceGenerator = option.name
+                                customGeneratorName = ""
                             } label: {
-                                Text("Use")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(theme.textOnPrimary)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 10)
-                                    .background(theme.primary)
-                                    .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
+                                HStack {
+                                    Image(systemName: presetStore.defaultPerchanceGenerator == option.name ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(presetStore.defaultPerchanceGenerator == option.name ? theme.primary : theme.textSecondary)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(option.title.isEmpty ? option.name : option.title)
+                                            .font(.subheadline)
+                                            .foregroundColor(theme.textPrimary)
+                                        if !option.description.isEmpty {
+                                            Text(option.description)
+                                                .font(.caption2)
+                                                .foregroundColor(theme.textSecondary)
+                                                .lineLimit(1)
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                }
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                                        .fill(presetStore.defaultPerchanceGenerator == option.name ? theme.primary.opacity(0.1) : theme.backgroundTertiary)
+                                )
                             }
-                            .disabled(customGeneratorName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        }
-                        
-                        if isUsingCustom {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(theme.success)
-                                Text("Using custom generator: \(presetStore.defaultPerchanceGenerator)")
-                                    .font(.caption)
-                                    .foregroundColor(theme.success)
-                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                        .fill(theme.backgroundSecondary)
-                )
+                .frame(maxHeight: 320)
+            }
+
+            ThemedDivider()
+
+            // Custom generator section
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Custom Generator")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(theme.textSecondary)
+                
+                Text("Enter the slug from any perchance.org generator URL")
+                    .font(.caption)
+                    .foregroundColor(theme.textSecondary)
+
+                HStack(spacing: 8) {
+                    ThemedTextField(placeholder: "e.g. best-ai-image-generator", text: $customGeneratorName)
+                    
+                    Button {
+                        let trimmed = customGeneratorName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmed.isEmpty else { return }
+                        presetStore.defaultPerchanceGenerator = trimmed
+                    } label: {
+                        Text("Use")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(theme.textOnPrimary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(theme.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
+                    }
+                    .disabled(customGeneratorName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                
+                if isUsingCustom {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(theme.success)
+                        Text("Using custom generator: \(presetStore.defaultPerchanceGenerator)")
+                            .font(.caption)
+                            .foregroundColor(theme.success)
+                    }
+                }
             }
         }
     }
@@ -349,258 +288,212 @@ struct GlobalSettingsView: View {
     // MARK: - Global Defaults Section
 
     private var globalDefaultsSection: some View {
+        CollapsibleSection(
+            title: "Prompt Defaults & Presets",
+            description: "Set default text that auto-fills prompt sections, and create reusable presets you can quickly apply.",
+            isExpanded: $isGlobalDefaultsExpanded,
+            showCard: false
+        ) {
+            globalDefaultsSectionContent
+        }
+    }
+    
+    private var globalDefaultsSectionContent: some View {
         let theme = themeManager.resolved
         
         return VStack(alignment: .leading, spacing: 12) {
-            // Header
-            Button(action: {
-                withAnimation {
-                    isGlobalDefaultsExpanded.toggle()
+            // Section tabs - horizontal scrolling pills
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(PromptSectionKind.allCases, id: \.self) { kind in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedSection = kind
+                            }
+                        } label: {
+                            Text(kind.displayLabel)
+                                .font(.caption.weight(selectedSection == kind ? .semibold : .regular))
+                                .foregroundColor(selectedSection == kind ? theme.textOnPrimary : theme.textPrimary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(selectedSection == kind ? theme.primary : theme.backgroundSecondary)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-            }) {
-                HStack {
-                    Text("Prompt Defaults & Presets")
-                        .font(.title3)
-                        .bold()
-                        .fontDesign(theme.fontDesign)
-                        .foregroundColor(theme.textPrimary)
-
-                    Spacer()
-
-                    Image(systemName: isGlobalDefaultsExpanded ? "chevron.down" : "chevron.right")
-                        .font(.subheadline)
-                        .foregroundColor(theme.textSecondary)
-                }
-                .contentShape(Rectangle())
+                .padding(.vertical, 4)
             }
-            .buttonStyle(.plain)
-
-            if isGlobalDefaultsExpanded {
-                // Explanation
-                Text("Set default text that auto-fills prompt sections, and create reusable presets you can quickly apply.")
-                    .font(.caption)
-                    .foregroundColor(theme.textSecondary)
-                    .padding(.bottom, 4)
-                
-                // Section tabs - horizontal scrolling pills
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(PromptSectionKind.allCases, id: \.self) { kind in
-                            Button {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    selectedSection = kind
-                                }
-                            } label: {
-                                Text(kind.displayLabel)
-                                    .font(.caption.weight(selectedSection == kind ? .semibold : .regular))
-                                    .foregroundColor(selectedSection == kind ? theme.textOnPrimary : theme.textPrimary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        Capsule()
-                                            .fill(selectedSection == kind ? theme.primary : theme.backgroundSecondary)
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-                
-                // Content card for selected section
-                VStack(alignment: .leading, spacing: 16) {
-                    // Default value section
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: "text.alignleft")
-                                .foregroundColor(theme.primary)
-                            Text("Default Value")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundColor(theme.textPrimary)
-                            
-                            Spacer()
-                            
-                            // Save as preset button - only show if there's custom text
-                            let currentDefault = presetStore.globalDefaults[selectedSection.defaultKey] ?? ""
-                            if !currentDefault.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                Button {
-                                    editablePresetText = currentDefault
-                                    savePresetName = ""
-                                    isShowingSavePresetAlert = true
-                                } label: {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "star.badge.plus")
-                                        Text("Save as Preset")
-                                    }
-                                    .font(.caption.weight(.medium))
-                                    .foregroundColor(theme.primary)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
+            
+            // Content card for selected section
+            VStack(alignment: .leading, spacing: 16) {
+                // Default value section
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "text.alignleft")
+                            .foregroundColor(theme.primary)
+                        Text("Default Value")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(theme.textPrimary)
                         
-                        Text("This text auto-fills when creating new prompts.")
-                            .font(.caption)
-                            .foregroundColor(theme.textSecondary)
+                        Spacer()
                         
-                        DynamicGrowingTextEditor(
-                            text: defaultBinding(for: selectedSection),
-                            placeholder: "Enter default \(selectedSection.displayLabel.lowercased())...",
-                            minLines: 1,
-                            maxLines: 6
-                        )
-                    }
-                    
-                    ThemedDivider()
-                    
-                    // Presets section
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: "star.fill")
-                                .foregroundColor(theme.primary)
-                            Text("Saved Presets")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundColor(theme.textPrimary)
-                            
-                            Spacer()
-                            
+                        // Save as preset button - only show if there's custom text
+                        let currentDefault = presetStore.globalDefaults[selectedSection.defaultKey] ?? ""
+                        if !currentDefault.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             Button {
-                                selectedPresetId = nil
-                                editablePresetName = ""
-                                editablePresetText = ""
-                                isShowingPresetEditor = true
+                                editablePresetText = currentDefault
+                                savePresetName = ""
+                                isShowingSavePresetAlert = true
                             } label: {
                                 HStack(spacing: 4) {
-                                    Image(systemName: "plus")
-                                    Text("New")
+                                    Image(systemName: "star.badge.plus")
+                                    Text("Save as Preset")
                                 }
                                 .font(.caption.weight(.medium))
                                 .foregroundColor(theme.primary)
                             }
                             .buttonStyle(.plain)
                         }
-                        
-                        Text("Quick-apply saved text snippets to any prompt.")
-                            .font(.caption)
-                            .foregroundColor(theme.textSecondary)
-                        
-                        presetsList
                     }
+                    
+                    Text("This text auto-fills when creating new prompts.")
+                        .font(.caption)
+                        .foregroundColor(theme.textSecondary)
+                    
+                    DynamicGrowingTextEditor(
+                        text: defaultBinding(for: selectedSection),
+                        placeholder: "Enter default \(selectedSection.displayLabel.lowercased())...",
+                        minLines: 1,
+                        maxLines: 6
+                    )
                 }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                        .fill(theme.backgroundSecondary)
-                )
+                
+                ThemedDivider()
+                
+                // Presets section
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(theme.primary)
+                        Text("Saved Presets")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(theme.textPrimary)
+                        
+                        Spacer()
+                        
+                        Button {
+                            selectedPresetId = nil
+                            editablePresetName = ""
+                            editablePresetText = ""
+                            isShowingPresetEditor = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
+                                Text("New")
+                            }
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(theme.primary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    Text("Quick-apply saved text snippets to any prompt.")
+                        .font(.caption)
+                        .foregroundColor(theme.textSecondary)
+                    
+                    presetsList
+                }
             }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
+                    .fill(theme.backgroundSecondary)
+            )
         }
     }
     
     // MARK: - Offline Storage Section
     
     private var offlineStorageSection: some View {
+        CollapsibleSection(
+            title: "Offline Access",
+            description: "Keep a copy of your characters, prompts, and images stored on this device. This allows you to view and use your data even without an internet connection.",
+            isExpanded: $isOfflineStorageExpanded
+        ) {
+            offlineStorageSectionContent
+        }
+    }
+    
+    private var offlineStorageSectionContent: some View {
         let theme = themeManager.resolved
         
-        return VStack(alignment: .leading, spacing: 8) {
-            Button(action: {
-                withAnimation {
-                    isOfflineStorageExpanded.toggle()
-                }
-            }) {
-                HStack {
-                    Text("Offline Access")
-                        .font(.title3)
-                        .bold()
-                        .fontDesign(theme.fontDesign)
+        return VStack(alignment: .leading, spacing: 12) {
+            // Toggle row
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Store Data Locally")
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(theme.textPrimary)
-
-                    Spacer()
-
-                    Image(systemName: isOfflineStorageExpanded ? "chevron.down" : "chevron.right")
-                        .font(.subheadline)
+                    
+                    Text(dataStore.isOfflineStorageEnabled 
+                         ? "Your data is available offline" 
+                         : "Data requires internet connection")
+                        .font(.caption)
                         .foregroundColor(theme.textSecondary)
                 }
-                .contentShape(Rectangle())
+                
+                Spacer()
+                
+                if dataStore.isModifyingOfflineStorage {
+                    ProgressView()
+                        .tint(theme.primary)
+                } else {
+                    Toggle("", isOn: Binding(
+                        get: { dataStore.isOfflineStorageEnabled },
+                        set: { newValue in
+                            if newValue {
+                                // Enable - download data
+                                Task {
+                                    await dataStore.enableOfflineStorage()
+                                }
+                            } else {
+                                // Disable - show confirmation first
+                                showingDisableOfflineStorageConfirmation = true
+                            }
+                        }
+                    ))
+                    .labelsHidden()
+                    .tint(theme.primary)
+                }
             }
-            .buttonStyle(.plain)
-
-            if isOfflineStorageExpanded {
-                Text("Keep a copy of your characters, prompts, and images stored on this device. This allows you to view and use your data even without an internet connection.")
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                    .fill(theme.backgroundTertiary)
+            )
+            
+            // Info box
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "icloud.fill")
+                    .foregroundColor(theme.primary)
+                    .font(.subheadline)
+                
+                Text("Your data is always securely stored in iCloud. Offline access creates an additional local copy on this device.")
                     .font(.caption)
                     .foregroundColor(theme.textSecondary)
-                    .padding(.bottom, 8)
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    // Toggle row
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Store Data Locally")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundColor(theme.textPrimary)
-                            
-                            Text(dataStore.isOfflineStorageEnabled 
-                                 ? "Your data is available offline" 
-                                 : "Data requires internet connection")
-                                .font(.caption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-                        
-                        Spacer()
-                        
-                        if dataStore.isModifyingOfflineStorage {
-                            ProgressView()
-                                .tint(theme.primary)
-                        } else {
-                            Toggle("", isOn: Binding(
-                                get: { dataStore.isOfflineStorageEnabled },
-                                set: { newValue in
-                                    if newValue {
-                                        // Enable - download data
-                                        Task {
-                                            await dataStore.enableOfflineStorage()
-                                        }
-                                    } else {
-                                        // Disable - show confirmation first
-                                        showingDisableOfflineStorageConfirmation = true
-                                    }
-                                }
-                            ))
-                            .labelsHidden()
-                            .tint(theme.primary)
-                        }
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                            .fill(theme.backgroundTertiary)
-                    )
-                    
-                    // Info box
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "icloud.fill")
-                            .foregroundColor(theme.primary)
-                            .font(.subheadline)
-                        
-                        Text("Your data is always securely stored in iCloud. Offline access creates an additional local copy on this device.")
-                            .font(.caption)
-                            .foregroundColor(theme.textSecondary)
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                            .fill(theme.primary.opacity(0.1))
-                    )
-                    
-                    // Storage usage section
-                    storageUsageView
-                }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: theme.cornerRadiusMedium)
-                        .fill(theme.backgroundSecondary)
-                )
             }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                    .fill(theme.primary.opacity(0.1))
+            )
+            
+            // Storage usage section
+            storageUsageView
         }
     }
     

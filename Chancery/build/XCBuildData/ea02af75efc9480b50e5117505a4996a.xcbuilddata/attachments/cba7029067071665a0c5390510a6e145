@@ -1,0 +1,241 @@
+{
+  "" : {
+    "const-values" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Chancery-primary.swiftconstvalues",
+    "dependencies" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Chancery-primary.d",
+    "diagnostics" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Chancery-primary.dia",
+    "emit-module-dependencies" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Chancery-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Chancery-primary-emit-module.dia",
+    "pch" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Chancery-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Chancery-primary.swiftdeps"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/ChanceryApp.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ChanceryApp.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ChanceryApp.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ChanceryApp.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/DynamicGrowingTextEditor.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/DynamicGrowingTextEditor.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/DynamicGrowingTextEditor.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/DynamicGrowingTextEditor.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/GalleryView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/GalleryView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/GalleryView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/GalleryView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/ImageCarousel.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ImageCarousel.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ImageCarousel.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ImageCarousel.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/ImagePicker.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ImagePicker.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ImagePicker.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ImagePicker.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/MultiCharacterPickerSheet.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/MultiCharacterPickerSheet.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/MultiCharacterPickerSheet.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/MultiCharacterPickerSheet.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/PromptPreviewSection.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptPreviewSection.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptPreviewSection.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptPreviewSection.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/PromptSectionRow.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptSectionRow.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptSectionRow.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptSectionRow.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/SafariView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/SafariView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/SafariView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/SafariView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/ThemePicker.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ThemePicker.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ThemePicker.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ThemePicker.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/ThemedComponents.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ThemedComponents.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ThemedComponents.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ThemedComponents.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Components/WebView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/WebView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/WebView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/WebView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Data/PerchanceGenerators.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PerchanceGenerators.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PerchanceGenerators.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PerchanceGenerators.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Models/AppTheme.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AppTheme.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AppTheme.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AppTheme.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Models/CharacterProfile.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterProfile.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterProfile.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterProfile.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Models/CloudKitConvertible.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CloudKitConvertible.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CloudKitConvertible.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CloudKitConvertible.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Models/PromptEnums.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptEnums.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptEnums.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptEnums.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Models/PromptImage.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptImage.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptImage.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptImage.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Models/PromptPreset.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptPreset.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptPreset.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptPreset.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Models/RelatedLink.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/RelatedLink.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/RelatedLink.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/RelatedLink.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Models/SavedPrompt.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/SavedPrompt.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/SavedPrompt.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/SavedPrompt.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Services/CloudKitManager.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CloudKitManager.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CloudKitManager.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CloudKitManager.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Services/PromptComposer.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptComposer.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptComposer.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptComposer.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Stores/DataStore.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/DataStore.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/DataStore.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/DataStore.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Stores/PromptPresetStore.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptPresetStore.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptPresetStore.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptPresetStore.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Stores/ThemeManager.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ThemeManager.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ThemeManager.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ThemeManager.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Utilities/DismissKeyboardOnDrag.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/DismissKeyboardOnDrag.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/DismissKeyboardOnDrag.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/DismissKeyboardOnDrag.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Utilities/FeatureFlags.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/FeatureFlags.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/FeatureFlags.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/FeatureFlags.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Utilities/KeyboardHelper.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/KeyboardHelper.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/KeyboardHelper.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/KeyboardHelper.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Utilities/Logger.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Logger.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Logger.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/Logger.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Utilities/StringExtensions.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/StringExtensions.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/StringExtensions.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/StringExtensions.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Character/CharacterDetailView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterDetailView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterDetailView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterDetailView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Character/CharacterOverviewView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterOverviewView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterOverviewView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterOverviewView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Character/CharactersView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharactersView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharactersView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharactersView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Character/NewCharacterView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/NewCharacterView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/NewCharacterView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/NewCharacterView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Character/PromptEditorView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptEditorView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptEditorView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/PromptEditorView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/ContentView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Home/AppTourView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AppTourView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AppTourView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AppTourView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Home/HomeView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/HomeView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/HomeView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/HomeView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Scratchpad/AddScratchToCharacterSheet.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AddScratchToCharacterSheet.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AddScratchToCharacterSheet.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AddScratchToCharacterSheet.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Scratchpad/AllImagesGallerySheet.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AllImagesGallerySheet.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AllImagesGallerySheet.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/AllImagesGallerySheet.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Scratchpad/SavedScratchSheetView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/SavedScratchSheetView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/SavedScratchSheetView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/SavedScratchSheetView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Scratchpad/ScratchpadView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ScratchpadView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ScratchpadView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/ScratchpadView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Settings/CharacterSettingsView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterSettingsView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterSettingsView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/CharacterSettingsView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/Chancery/Views/Settings/GlobalSettingsView.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/GlobalSettingsView.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/GlobalSettingsView.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/GlobalSettingsView.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/Chancery.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

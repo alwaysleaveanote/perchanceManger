@@ -1,0 +1,46 @@
+{
+  "" : {
+    "const-values" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests-primary.swiftconstvalues",
+    "dependencies" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests-primary.d",
+    "diagnostics" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests-primary.dia",
+    "emit-module-dependencies" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests-primary-emit-module.dia",
+    "pch" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests-primary.swiftdeps"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/ChanceryTests/ChanceryTests.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTests.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/ChanceryTests/ChanceryTestsLaunchTests.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTestsLaunchTests.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTestsLaunchTests.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/ChanceryTestsLaunchTests.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/ChanceryTests/CharacterProfileTests.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/CharacterProfileTests.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/CharacterProfileTests.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/CharacterProfileTests.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/ChanceryTests/PromptComposerTests.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/PromptComposerTests.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/PromptComposerTests.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/PromptComposerTests.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/ChanceryTests/PromptEnumsTests.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/PromptEnumsTests.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/PromptEnumsTests.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/PromptEnumsTests.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/ChanceryTests/SavedPromptTests.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/SavedPromptTests.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/SavedPromptTests.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/SavedPromptTests.o"
+  },
+  "/Users/alexgingras/github/perchanceManger/Chancery/ChanceryTests/StringExtensionsTests.swift" : {
+    "index-unit-output-path" : "/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/StringExtensionsTests.o",
+    "llvm-bc" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/StringExtensionsTests.bc",
+    "object" : "/Users/alexgingras/github/perchanceManger/Chancery/build/Chancery.build/Release-iphoneos/ChanceryTests.build/Objects-normal/arm64/StringExtensionsTests.o"
+  }
+}
