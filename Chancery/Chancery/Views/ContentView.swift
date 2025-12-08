@@ -110,6 +110,12 @@ struct ContentView: View {
     /// Prompt ID to navigate to (for deep linking from Home gallery)
     @State private var navigateToPromptId: UUID? = nil
     
+    /// Scene ID to navigate to
+    @State private var navigateToSceneId: UUID? = nil
+    
+    /// Scene Prompt ID to navigate to (for deep linking from Home gallery)
+    @State private var navigateToScenePromptId: UUID? = nil
+    
     // MARK: - Environment
     
     @EnvironmentObject var themeManager: ThemeManager
@@ -133,6 +139,29 @@ struct ContentView: View {
                 for existing in dataStore.characters {
                     if !newValue.contains(where: { $0.id == existing.id }) {
                         dataStore.deleteCharacter(existing)
+                    }
+                }
+            }
+        )
+    }
+    
+    /// Binding to scenes array in DataStore
+    private var scenes: Binding<[CharacterScene]> {
+        Binding(
+            get: { dataStore.scenes },
+            set: { newValue in
+                // Handle array changes by comparing and updating
+                for scene in newValue {
+                    if !dataStore.scenes.contains(where: { $0.id == scene.id }) {
+                        dataStore.addScene(scene)
+                    } else {
+                        dataStore.updateScene(scene)
+                    }
+                }
+                // Handle deletions
+                for existing in dataStore.scenes {
+                    if !newValue.contains(where: { $0.id == existing.id }) {
+                        dataStore.deleteScene(existing)
                     }
                 }
             }
@@ -165,6 +194,7 @@ struct ContentView: View {
     private var homeTab: some View {
         HomeView(
             characters: characters.wrappedValue,
+            scenes: scenes.wrappedValue,
             onNavigateToScratchpad: {
                 selectedTab = .scratchpad
             },
@@ -182,6 +212,20 @@ struct ContentView: View {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     navigateToPromptId = promptId
                     navigateToCharacterId = characterId
+                    selectedTab = .characters
+                }
+            },
+            onNavigateToScene: { sceneId in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    navigateToScenePromptId = nil
+                    navigateToSceneId = sceneId
+                    selectedTab = .characters
+                }
+            },
+            onNavigateToScenePrompt: { sceneId, promptId in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    navigateToScenePromptId = promptId
+                    navigateToSceneId = sceneId
                     selectedTab = .characters
                 }
             }
@@ -217,9 +261,12 @@ struct ContentView: View {
     private var charactersTab: some View {
         CharactersView(
             characters: characters,
+            scenes: scenes,
             openGenerator: openGenerator,
             navigateToCharacterId: $navigateToCharacterId,
-            navigateToPromptId: $navigateToPromptId
+            navigateToPromptId: $navigateToPromptId,
+            navigateToSceneId: $navigateToSceneId,
+            navigateToScenePromptId: $navigateToScenePromptId
         )
         .tabItem {
             Label(Tab.characters.title, systemImage: tabIcon(for: .characters))

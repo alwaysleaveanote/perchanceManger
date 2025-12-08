@@ -12,13 +12,12 @@ struct CharacterOverviewView: View {
     let onOpenSettings: () -> Void
     let onDeletePrompt: (Int) -> Void
     let onDuplicatePrompt: (Int, String) -> Void  // index, new name
+    var scenes: [CharacterScene] = []  // Scenes this character is in
+    var onSceneTap: ((UUID) -> Void)? = nil  // Navigate to scene
 
     @Binding var isEditingInfo: Bool
     @EnvironmentObject var themeManager: ThemeManager
 
-    @State private var newLinkTitle: String = ""
-    @State private var newLinkURL: String = ""
-    @State private var showAddLinkForm: Bool = false
     @State private var showingProfileImagePicker: Bool = false
     @State private var showingProfileImageViewer: Bool = false
     @State private var showingGalleryImagePicker: Bool = false
@@ -44,14 +43,19 @@ struct CharacterOverviewView: View {
             // Bio & Notes Card
             infoCard
             
-            // Links Card
-            linksCard
+            // Links Card (using reusable component)
+            LinksCard(links: $character.links, themeId: character.characterThemeId)
             
             // Gallery Card
             galleryCard
             
             // Prompts Card
             promptsCard
+            
+            // Scenes This Character is In Card
+            if !scenes.isEmpty || onSceneTap != nil {
+                scenesCard
+            }
 
             Spacer(minLength: 0)
         }
@@ -315,217 +319,7 @@ struct CharacterOverviewView: View {
     }
 
     // MARK: - Links Card
-
-    private var linksCard: some View {
-        let theme = characterTheme
-        
-        return VStack(alignment: .leading, spacing: 16) {
-            // Header with add button
-            HStack {
-                Text("Related Links")
-                    .font(.subheadline.weight(.semibold))
-                    .fontDesign(theme.fontDesign)
-                    .foregroundColor(theme.textPrimary)
-                
-                Spacer()
-                
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        showAddLinkForm.toggle()
-                        if !showAddLinkForm {
-                            newLinkTitle = ""
-                            newLinkURL = ""
-                        }
-                    }
-                } label: {
-                    Image(systemName: showAddLinkForm ? "xmark" : "plus")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(theme.textOnPrimary)
-                        .frame(width: 28, height: 28)
-                        .background(
-                            Circle()
-                                .fill(showAddLinkForm ? theme.textSecondary : theme.primary)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-            
-            // Add link form (expandable)
-            if showAddLinkForm {
-                VStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Title")
-                            .font(.caption.weight(.medium))
-                            .foregroundColor(theme.textSecondary)
-                        ThemedTextField(placeholder: "e.g. Character Reference", text: $newLinkTitle, characterThemeId: character.characterThemeId)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("URL")
-                            .font(.caption.weight(.medium))
-                            .foregroundColor(theme.textSecondary)
-                        ThemedTextField(placeholder: "https://...", text: $newLinkURL, characterThemeId: character.characterThemeId)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                    }
-                    
-                    Button {
-                        addLink()
-                    } label: {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add Link")
-                        }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(theme.textOnPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                                .fill(newLinkURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty 
-                                      ? theme.primary.opacity(0.5) 
-                                      : theme.primary)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(newLinkURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                        .fill(theme.backgroundTertiary)
-                )
-                .transition(.asymmetric(
-                    insertion: .scale(scale: 0.95).combined(with: .opacity),
-                    removal: .scale(scale: 0.95).combined(with: .opacity)
-                ))
-            }
-
-            // Links list
-            if character.links.isEmpty && !showAddLinkForm {
-                Text("Tap + to add reference links")
-                    .font(.caption)
-                    .foregroundColor(theme.textSecondary)
-            } else if !character.links.isEmpty {
-                // Make scrollable if more than 4 links
-                if character.links.count > 4 {
-                    ScrollView {
-                        VStack(spacing: 8) {
-                            ForEach(character.links) { link in
-                                linkRow(link: link, theme: theme)
-                            }
-                        }
-                    }
-                    .frame(maxHeight: 280) // Approximately 4 link rows
-                } else {
-                    VStack(spacing: 8) {
-                        ForEach(character.links) { link in
-                            linkRow(link: link, theme: theme)
-                        }
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .themedCard(characterThemeId: character.characterThemeId)
-    }
-    
-    /// Individual link row with modern styling
-    private func linkRow(link: RelatedLink, theme: ResolvedTheme) -> some View {
-        HStack(spacing: 12) {
-            // Icon with background
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(theme.primary.opacity(0.12))
-                    .frame(width: 36, height: 36)
-                
-                Image(systemName: link.isValid ? "link" : "exclamationmark.triangle")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(link.isValid ? theme.primary : theme.warning)
-            }
-            
-            // Link info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(link.title.isEmpty ? "Untitled Link" : link.title)
-                    .font(.subheadline.weight(.medium))
-                    .fontDesign(theme.fontDesign)
-                    .foregroundColor(theme.textPrimary)
-                    .lineLimit(1)
-                
-                if let host = link.host {
-                    Text(host)
-                        .font(.caption2)
-                        .foregroundColor(theme.textSecondary)
-                        .lineLimit(1)
-                } else {
-                    Text(link.urlString)
-                        .font(.caption2)
-                        .foregroundColor(theme.textSecondary)
-                        .lineLimit(1)
-                }
-            }
-            
-            Spacer()
-            
-            // Action buttons
-            HStack(spacing: 4) {
-                // Open link button
-                if let url = link.url {
-                    Button {
-                        UIApplication.shared.open(url)
-                    } label: {
-                        Image(systemName: "arrow.up.right.square")
-                            .font(.system(size: 16))
-                            .foregroundColor(theme.primary)
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                // Delete button
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        removeLink(link)
-                    }
-                } label: {
-                    Image(systemName: "trash")
-                        .font(.system(size: 14))
-                        .foregroundColor(theme.error.opacity(0.8))
-                        .frame(width: 32, height: 32)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                .fill(theme.backgroundTertiary)
-        )
-    }
-    
-    private func removeLink(_ link: RelatedLink) {
-        if let index = character.links.firstIndex(where: { $0.id == link.id }) {
-            character.links.remove(at: index)
-        }
-    }
-
-    private func addLink() {
-        let trimmedURL = newLinkURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedURL.isEmpty else { return }
-
-        let trimmedTitle = newLinkTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        let link = RelatedLink(
-            title: trimmedTitle,
-            urlString: trimmedURL
-        )
-        
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            character.links.append(link)
-            newLinkTitle = ""
-            newLinkURL = ""
-            showAddLinkForm = false
-        }
-    }
+    // Now using reusable LinksCard component - see body
 
     // MARK: - Gallery Card
 
@@ -697,6 +491,84 @@ struct CharacterOverviewView: View {
                             .font(.caption2)
                             .foregroundColor(theme.textSecondary)
                     }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.medium))
+                    .foregroundColor(theme.textSecondary)
+            }
+            .padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                    .fill(theme.backgroundTertiary)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    // MARK: - Scenes Card
+    
+    /// Scenes this character is in - mirrors charactersCard in SceneOverviewView
+    private var scenesCard: some View {
+        let theme = characterTheme
+        let characterScenes = scenes.filter { $0.characterIds.contains(character.id) }
+        
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("Scenes This Character is In")
+                .font(.subheadline.weight(.semibold))
+                .fontDesign(theme.fontDesign)
+                .foregroundColor(theme.textPrimary)
+            
+            if characterScenes.isEmpty {
+                Text("Not in any scenes yet")
+                    .font(.caption)
+                    .foregroundColor(theme.textSecondary)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(characterScenes) { scene in
+                        sceneRow(scene, theme: theme)
+                    }
+                }
+            }
+        }
+        .themedCard(characterThemeId: character.characterThemeId)
+    }
+    
+    private func sceneRow(_ scene: CharacterScene, theme: ResolvedTheme) -> some View {
+        Button {
+            onSceneTap?(scene.id)
+        } label: {
+            HStack(spacing: 12) {
+                // Avatar
+                Group {
+                    if let imageData = scene.profileImageData,
+                       let uiImage = UIImage(data: imageData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        ZStack {
+                            Circle()
+                                .fill(theme.primary.opacity(0.2))
+                            Image(systemName: "person.3.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(theme.primary)
+                        }
+                    }
+                }
+                .frame(width: 44, height: 44)
+                .clipShape(Circle())
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(scene.name.isEmpty ? "Untitled Scene" : scene.name)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(theme.textPrimary)
+                    
+                    Text("\(scene.prompts.count) prompt\(scene.prompts.count == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundColor(theme.textSecondary)
                 }
                 
                 Spacer()

@@ -24,6 +24,15 @@ struct GalleryImage: Identifiable {
         self.promptTitle = nil
         self.isProfileImage = true
     }
+    
+    /// Initializer for standalone gallery images (not from a prompt)
+    init(standaloneImage: PromptImage, title: String = "Gallery Image") {
+        self.id = standaloneImage.id
+        self.data = standaloneImage.data
+        self.promptIndex = nil
+        self.promptTitle = title
+        self.isProfileImage = false
+    }
 }
 
 /// Full-screen gallery view for browsing images

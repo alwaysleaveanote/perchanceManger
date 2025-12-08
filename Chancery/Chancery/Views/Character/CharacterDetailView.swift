@@ -8,6 +8,12 @@ struct CharacterDetailView: View {
     
     /// Optional prompt ID to navigate to on appear (for deep linking)
     var initialPromptId: UUID? = nil
+    
+    /// All scenes (to show which scenes this character is in)
+    var scenes: [CharacterScene] = []
+    
+    /// Navigate to a scene
+    var onSceneTap: ((UUID) -> Void)? = nil
 
     @EnvironmentObject var presetStore: PromptPresetStore
     @EnvironmentObject var themeManager: ThemeManager
@@ -41,10 +47,13 @@ struct CharacterDetailView: View {
             ToolbarItem(placement: .navigationBarLeading) {
                 if selectedPromptIndex != nil {
                     Button {
-                        // Dismiss keyboard first to ensure button works on first tap
+                        // Dismiss keyboard first, then navigate after a brief delay
+                        // This ensures the button works even when keyboard is open
                         KeyboardHelper.dismiss()
-                        withAnimation {
-                            selectedPromptIndex = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            withAnimation {
+                                selectedPromptIndex = nil
+                            }
                         }
                     } label: {
                         HStack(spacing: 4) {
@@ -52,22 +61,25 @@ struct CharacterDetailView: View {
                                 .font(.system(size: 16, weight: .medium))
                         }
                         .foregroundColor(characterTheme.primary)
+                        .frame(width: 44, height: 44)  // Larger tap target
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 } else if isEditingCharacterInfo {
                     Button {
-                        // Dismiss keyboard first
+                        // Dismiss keyboard first, then navigate after a brief delay
                         KeyboardHelper.dismiss()
-                        // Auto-save and dismiss
-                        isEditingCharacterInfo = false
-                        dismiss()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            isEditingCharacterInfo = false
+                            dismiss()
+                        }
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 16, weight: .medium))
                         }
                         .foregroundColor(characterTheme.primary)
+                        .frame(width: 44, height: 44)  // Larger tap target
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -207,6 +219,8 @@ struct CharacterDetailView: View {
                     onDuplicatePrompt: { index, newName in
                         duplicatePrompt(at: index, withName: newName)
                     },
+                    scenes: scenes,
+                    onSceneTap: onSceneTap,
                     isEditingInfo: $isEditingCharacterInfo
                 )
             }
@@ -277,36 +291,53 @@ struct CharacterDetailView: View {
     
     // MARK: - Images collection (character-wide)
 
+    /// Returns all images for the thumbnail gallery display
+    /// Order: profile image -> prompt images -> standalone images
     private func allPromptImages() -> [PromptImage] {
-        var images = character.prompts.flatMap { $0.images }
-
-        // Only add profile image if it wasn't uploaded from a prompt
+        var images: [PromptImage] = []
+        
+        // 1. Profile image first (if unique)
         if let profileData = character.profileImageData {
             let isFromPrompt = character.prompts.flatMap { $0.images }.contains { $0.data == profileData }
-            if !isFromPrompt {
-                images.insert(PromptImage(id: UUID(), data: profileData), at: 0)
+            let isFromStandalone = character.standaloneImages.contains { $0.data == profileData }
+            if !isFromPrompt && !isFromStandalone {
+                images.append(PromptImage(id: UUID(), data: profileData))
             }
         }
+        
+        // 2. Prompt images
+        images.append(contentsOf: character.prompts.flatMap { $0.images })
+        
+        // 3. Standalone images
+        images.append(contentsOf: character.standaloneImages)
 
         return images
     }
     
+    /// Returns all images for the swipeable gallery with metadata
+    /// Order: profile image -> prompt images -> standalone images (MUST match allPromptImages order)
     private func allGalleryImages() -> [GalleryImage] {
         var images: [GalleryImage] = []
         
-        // Only add profile image if it wasn't uploaded from a prompt (i.e., uploaded separately)
+        // 1. Profile image first (if unique)
         if let profileData = character.profileImageData {
             let isFromPrompt = character.prompts.flatMap { $0.images }.contains { $0.data == profileData }
-            if !isFromPrompt {
+            let isFromStandalone = character.standaloneImages.contains { $0.data == profileData }
+            if !isFromPrompt && !isFromStandalone {
                 images.append(GalleryImage(profileImageData: profileData))
             }
         }
         
-        // Add images from each prompt with their prompt index
+        // 2. Prompt images with their prompt index
         for (promptIndex, prompt) in character.prompts.enumerated() {
             for promptImage in prompt.images {
                 images.append(GalleryImage(from: promptImage, promptIndex: promptIndex, promptTitle: prompt.title))
             }
+        }
+        
+        // 3. Standalone images
+        for standaloneImage in character.standaloneImages {
+            images.append(GalleryImage(standaloneImage: standaloneImage))
         }
 
         return images

@@ -9,10 +9,13 @@ import SwiftUI
 
 struct HomeView: View {
     let characters: [CharacterProfile]
+    let scenes: [CharacterScene]
     let onNavigateToScratchpad: () -> Void
     let onNavigateToCharacters: () -> Void
     let onNavigateToCharacter: ((UUID) -> Void)?
     let onNavigateToPrompt: ((UUID, UUID) -> Void)?
+    let onNavigateToScene: ((UUID) -> Void)?
+    let onNavigateToScenePrompt: ((UUID, UUID) -> Void)?
     
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showImageGallery = false
@@ -22,9 +25,21 @@ struct HomeView: View {
     // MARK: - Computed Properties
     
     private var hasAnyImages: Bool {
-        characters.contains { character in
-            character.prompts.contains { !$0.images.isEmpty }
+        // Check character images
+        let hasCharacterImages = characters.contains { character in
+            character.prompts.contains { !$0.images.isEmpty } ||
+            !character.standaloneImages.isEmpty ||
+            character.profileImageData != nil
         }
+        
+        // Check scene images
+        let hasSceneImages = scenes.contains { scene in
+            scene.prompts.contains { !$0.images.isEmpty } ||
+            !scene.standaloneImages.isEmpty ||
+            scene.profileImageData != nil
+        }
+        
+        return hasCharacterImages || hasSceneImages
     }
     
     /// All images with full metadata for gallery (includes profile images, standalone images, avoids duplicates)
@@ -81,6 +96,77 @@ struct HomeView: View {
                 ))
             }
         }
+        
+        // Add scene images
+        for scene in scenes {
+            // Scene prompt images
+            for prompt in scene.prompts {
+                for image in prompt.images {
+                    if !seenImageData.contains(image.data) {
+                        seenImageData.insert(image.data)
+                        // Get character names for the scene
+                        let sceneCharacterNames = scene.characterIds.compactMap { id in
+                            characters.first { $0.id == id }?.name
+                        }.joined(separator: " & ")
+                        result.append(AllImagesGallerySheet.GalleryImage(
+                            id: image.id,
+                            image: image,
+                            characterName: sceneCharacterNames.isEmpty ? scene.name : sceneCharacterNames,
+                            characterId: scene.characterIds.first ?? UUID(),
+                            promptTitle: prompt.title.isEmpty ? "Untitled Prompt" : prompt.title,
+                            promptId: prompt.id,  // Use actual prompt ID for navigation
+                            isProfileImage: false,
+                            sceneId: scene.id,  // Set scene ID for scene prompt navigation
+                            sceneName: scene.name
+                        ))
+                    }
+                }
+            }
+            
+            // Scene standalone images
+            for image in scene.standaloneImages {
+                if !seenImageData.contains(image.data) {
+                    seenImageData.insert(image.data)
+                    let sceneCharacterNames = scene.characterIds.compactMap { id in
+                        characters.first { $0.id == id }?.name
+                    }.joined(separator: " & ")
+                    result.append(AllImagesGallerySheet.GalleryImage(
+                        id: image.id,
+                        image: image,
+                        characterName: sceneCharacterNames.isEmpty ? scene.name : sceneCharacterNames,
+                        characterId: scene.characterIds.first ?? UUID(),
+                        promptTitle: "\(scene.name): Gallery",
+                        promptId: UUID(),
+                        isProfileImage: false,
+                        isStandaloneImage: true,
+                        sceneId: scene.id,
+                        sceneName: scene.name
+                    ))
+                }
+            }
+            
+            // Scene profile image
+            if let profileData = scene.profileImageData,
+               !seenImageData.contains(profileData) {
+                seenImageData.insert(profileData)
+                let profileImage = PromptImage(data: profileData)
+                let sceneCharacterNames = scene.characterIds.compactMap { id in
+                    characters.first { $0.id == id }?.name
+                }.joined(separator: " & ")
+                result.append(AllImagesGallerySheet.GalleryImage(
+                    id: profileImage.id,
+                    image: profileImage,
+                    characterName: sceneCharacterNames.isEmpty ? scene.name : sceneCharacterNames,
+                    characterId: scene.characterIds.first ?? UUID(),
+                    promptTitle: "\(scene.name): Profile",
+                    promptId: UUID(),
+                    isProfileImage: true,
+                    sceneId: scene.id,
+                    sceneName: scene.name
+                ))
+            }
+        }
+        
         return result
     }
     
@@ -112,6 +198,39 @@ struct HomeView: View {
                 result.append((profileImage, character.name, "Profile Image"))
             }
         }
+        
+        // Add scene images
+        for scene in scenes {
+            let sceneCharacterNames = scene.characterIds.compactMap { id in
+                characters.first { $0.id == id }?.name
+            }.joined(separator: " & ")
+            let displayName = sceneCharacterNames.isEmpty ? scene.name : sceneCharacterNames
+            
+            for prompt in scene.prompts {
+                for image in prompt.images {
+                    if !seenImageData.contains(image.data) {
+                        seenImageData.insert(image.data)
+                        result.append((image, displayName, "\(scene.name): \(prompt.title)"))
+                    }
+                }
+            }
+            
+            for image in scene.standaloneImages {
+                if !seenImageData.contains(image.data) {
+                    seenImageData.insert(image.data)
+                    result.append((image, displayName, "\(scene.name): Gallery"))
+                }
+            }
+            
+            // Scene profile image
+            if let profileData = scene.profileImageData,
+               !seenImageData.contains(profileData) {
+                seenImageData.insert(profileData)
+                let profileImage = PromptImage(data: profileData)
+                result.append((profileImage, displayName, "\(scene.name): Profile"))
+            }
+        }
+        
         return result
     }
     
@@ -154,6 +273,7 @@ struct HomeView: View {
         .sheet(isPresented: $showImageGallery) {
             AllImagesGallerySheet(
                 characters: characters,
+                scenes: scenes,
                 onNavigateToCharacter: { characterId in
                     showImageGallery = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -164,6 +284,18 @@ struct HomeView: View {
                     showImageGallery = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         navigateToPrompt(characterId, promptId)
+                    }
+                },
+                onNavigateToScene: { sceneId in
+                    showImageGallery = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        navigateToScene(sceneId)
+                    }
+                },
+                onNavigateToScenePrompt: { sceneId, promptId in
+                    showImageGallery = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        navigateToScenePrompt(sceneId, promptId)
                     }
                 }
             )
@@ -185,6 +317,18 @@ struct HomeView: View {
                     selectedImageIndex = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         navigateToPrompt(characterId, promptId)
+                    }
+                },
+                onNavigateToScene: { sceneId in
+                    selectedImageIndex = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        navigateToScene(sceneId)
+                    }
+                },
+                onNavigateToScenePrompt: { sceneId, promptId in
+                    selectedImageIndex = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        navigateToScenePrompt(sceneId, promptId)
                     }
                 }
             )
@@ -216,6 +360,24 @@ struct HomeView: View {
             charCallback(characterId)
         } else {
             onNavigateToCharacters()
+        }
+    }
+    
+    private func navigateToScene(_ sceneId: UUID) {
+        if let callback = onNavigateToScene {
+            callback(sceneId)
+        } else {
+            // Fallback to characters tab if no callback provided
+            onNavigateToCharacters()
+        }
+    }
+    
+    private func navigateToScenePrompt(_ sceneId: UUID, _ promptId: UUID) {
+        if let callback = onNavigateToScenePrompt {
+            callback(sceneId, promptId)
+        } else {
+            // Fallback to scene navigation if no prompt callback provided
+            navigateToScene(sceneId)
         }
     }
     
@@ -315,51 +477,18 @@ struct HomeView: View {
                 }
             }
             
-            // Inline stats row
-            HStack(spacing: 16) {
-                HStack(spacing: 5) {
-                    Image(systemName: "person.3.fill")
-                        .font(.caption2)
-                        .foregroundColor(theme.primary)
-                    Text("\(characters.count)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(theme.textPrimary)
-                    Text(characters.count == 1 ? "character" : "characters")
-                        .font(.caption)
-                        .foregroundColor(theme.textSecondary)
+            // Stats row - modern pill design
+            HStack(spacing: 8) {
+                statPill(icon: "person.fill", count: characters.count, theme: theme)
+                
+                if !scenes.isEmpty {
+                    statPill(icon: "person.2.fill", count: scenes.count, theme: theme)
                 }
                 
-                Text("•")
-                    .font(.caption)
-                    .foregroundColor(theme.textSecondary.opacity(0.4))
+                statPill(icon: "doc.text.fill", count: totalPromptCount, theme: theme)
+                statPill(icon: "photo.fill", count: images.count, theme: theme)
                 
-                HStack(spacing: 5) {
-                    Image(systemName: "doc.text.fill")
-                        .font(.caption2)
-                        .foregroundColor(theme.primary)
-                    Text("\(totalPromptCount)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(theme.textPrimary)
-                    Text(totalPromptCount == 1 ? "prompt" : "prompts")
-                        .font(.caption)
-                        .foregroundColor(theme.textSecondary)
-                }
-                
-                Text("•")
-                    .font(.caption)
-                    .foregroundColor(theme.textSecondary.opacity(0.4))
-                
-                HStack(spacing: 5) {
-                    Image(systemName: "photo.fill")
-                        .font(.caption2)
-                        .foregroundColor(theme.primary)
-                    Text("\(images.count)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(theme.textPrimary)
-                    Text(images.count == 1 ? "image" : "images")
-                        .font(.caption)
-                        .foregroundColor(theme.textSecondary)
-                }
+                Spacer()
             }
             
             // Image grid preview - clicking opens that specific image
@@ -427,6 +556,24 @@ struct HomeView: View {
         )
     }
     
+    /// Modern stat pill for the creations section
+    private func statPill(icon: String, count: Int, theme: ResolvedTheme) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(theme.primary)
+            Text("\(count)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(theme.textPrimary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(theme.primary.opacity(0.1))
+        )
+    }
+    
     // MARK: - Features Section
     
     private var featuresSection: some View {
@@ -468,29 +615,23 @@ struct HomeView: View {
                 )
             }
             
-            // Divider
-            Rectangle()
-                .fill(theme.divider)
-                .frame(height: 1)
-                .padding(.vertical, 4)
-            
-            // Tour action - integrated naturally
+            // Tour action - stands out with accent styling
             Button {
                 showAppTour = true
             } label: {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(theme.primary.opacity(0.12))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(theme.primary)
+                            .fill(theme.primary)
+                            .frame(width: 40, height: 40)
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(theme.textOnPrimary)
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Take a Tour")
-                            .font(.subheadline.weight(.medium))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(theme.textPrimary)
                         Text("Learn how to get the most out of Chancery")
                             .font(.caption)
@@ -500,9 +641,18 @@ struct HomeView: View {
                     Spacer()
                     
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(theme.textSecondary.opacity(0.6))
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(theme.primary)
                 }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .fill(theme.primary.opacity(0.08))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .stroke(theme.primary.opacity(0.2), lineWidth: 1)
+                )
             }
         }
         .padding(20)

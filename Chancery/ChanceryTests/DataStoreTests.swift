@@ -133,3 +133,111 @@ extension DataStoreTests {
         }
     }
 }
+
+// MARK: - Scene Data Structure Tests
+
+extension DataStoreTests {
+    
+    func test_sceneArray_canBeEncoded() throws {
+        let scene1 = CharacterScene(name: "Beach Day", characterIds: [UUID(), UUID()])
+        let scene2 = CharacterScene(name: "Adventure", characterIds: [UUID()])
+        let scenes = [scene1, scene2]
+        
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(scenes)
+        
+        XCTAssertFalse(data.isEmpty)
+    }
+    
+    func test_sceneArray_canBeDecoded() throws {
+        let scene1 = CharacterScene(name: "Beach Day", characterIds: [UUID(), UUID()])
+        let scene2 = CharacterScene(name: "Adventure", characterIds: [UUID()])
+        let original = [scene1, scene2]
+        
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(original)
+        
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode([CharacterScene].self, from: data)
+        
+        XCTAssertEqual(decoded.count, 2)
+        XCTAssertEqual(decoded[0].name, "Beach Day")
+        XCTAssertEqual(decoded[1].name, "Adventure")
+    }
+    
+    func test_sceneWithPrompts_canBeEncodedAndDecoded() throws {
+        var scene = CharacterScene(name: "Test Scene", characterIds: [UUID()])
+        
+        let characterId = UUID()
+        let settings = SceneCharacterSettings(
+            physicalDescription: "Tall",
+            outfit: "Armor",
+            pose: "Standing"
+        )
+        
+        var prompt = ScenePrompt(
+            title: "Battle",
+            environment: "Castle",
+            lighting: "Dramatic",
+            characterSettings: [characterId: settings]
+        )
+        prompt.images.append(PromptImage(data: Data([0x00, 0x01])))
+        scene.prompts.append(prompt)
+        
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(scene)
+        
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(CharacterScene.self, from: data)
+        
+        XCTAssertEqual(decoded.name, "Test Scene")
+        XCTAssertEqual(decoded.prompts.count, 1)
+        XCTAssertEqual(decoded.prompts[0].title, "Battle")
+        XCTAssertEqual(decoded.prompts[0].environment, "Castle")
+        XCTAssertEqual(decoded.prompts[0].characterSettings[characterId]?.physicalDescription, "Tall")
+        XCTAssertEqual(decoded.prompts[0].images.count, 1)
+    }
+    
+    @MainActor
+    func test_sceneIndex_returnsCorrectIndex() {
+        let dataStore = DataStore.shared
+        
+        // Note: This test uses the shared DataStore, so we're testing the index lookup logic
+        // In a real scenario, we'd use dependency injection for better isolation
+        
+        let scene = CharacterScene(name: "Test Scene \(UUID().uuidString)")
+        dataStore.addScene(scene)
+        
+        let index = dataStore.sceneIndex(for: scene.id)
+        XCTAssertNotNil(index)
+        XCTAssertEqual(index, 0) // New scenes are inserted at the beginning
+        
+        // Cleanup
+        dataStore.deleteScene(scene)
+    }
+    
+    @MainActor
+    func test_charactersForScene_returnsMatchingCharacters() {
+        let dataStore = DataStore.shared
+        
+        // Get existing characters or use their IDs
+        let existingCharacters = dataStore.characters
+        guard existingCharacters.count >= 2 else {
+            // Skip test if not enough characters
+            return
+        }
+        
+        let char1 = existingCharacters[0]
+        let char2 = existingCharacters[1]
+        
+        let scene = CharacterScene(
+            name: "Test Scene",
+            characterIds: [char1.id, char2.id]
+        )
+        
+        let sceneCharacters = dataStore.characters(for: scene)
+        XCTAssertEqual(sceneCharacters.count, 2)
+        XCTAssertTrue(sceneCharacters.contains { $0.id == char1.id })
+        XCTAssertTrue(sceneCharacters.contains { $0.id == char2.id })
+    }
+}

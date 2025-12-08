@@ -110,10 +110,10 @@ extension ImagePicker {
                 }
             }
             
-            group.notify(queue: .main) { [weak self] in
+            group.notify(queue: .main) {
                 guard !loadedImages.isEmpty else { return }
                 Logger.info("Successfully loaded \(loadedImages.count) images", category: .ui)
-                self?.onImagesPicked(loadedImages)
+                self.onImagesPicked(loadedImages)
             }
         }
     }

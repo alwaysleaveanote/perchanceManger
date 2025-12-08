@@ -29,6 +29,9 @@ struct CharactersView: View {
     /// Binding to the array of character profiles
     @Binding var characters: [CharacterProfile]
     
+    /// Binding to the array of scenes
+    @Binding var scenes: [CharacterScene]
+    
     /// Callback to open the Perchance generator with a prompt
     let openGenerator: (String) -> Void
     
@@ -37,6 +40,12 @@ struct CharactersView: View {
     
     /// Prompt ID to navigate to (for deep linking to specific prompt)
     @Binding var navigateToPromptId: UUID?
+    
+    /// Scene ID to navigate to
+    @Binding var navigateToSceneId: UUID?
+    
+    /// Scene Prompt ID to navigate to (for deep linking to specific scene prompt)
+    @Binding var navigateToScenePromptId: UUID?
     
     // MARK: - Environment & State
     
@@ -48,11 +57,36 @@ struct CharactersView: View {
     /// Character pending deletion (for confirmation)
     @State private var characterToDelete: CharacterProfile? = nil
     
+    /// Scene pending deletion (for confirmation)
+    @State private var sceneToDelete: CharacterScene? = nil
+    
     /// Whether the delete confirmation alert is showing
     @State private var showingDeleteConfirmation = false
     
-    /// Search text for filtering characters
+    /// Whether the scene delete confirmation alert is showing
+    @State private var showingSceneDeleteConfirmation = false
+    
+    /// Search text for filtering
     @State private var searchText = ""
+    
+    /// Currently selected tab
+    @State private var selectedTab: ListTab = .characters
+    
+    /// Toast for not enough characters to create random scene
+    @State private var showNotEnoughCharactersToast = false
+    
+    /// Tab options for the list
+    enum ListTab: String, CaseIterable {
+        case characters = "Characters"
+        case scenes = "Scenes"
+        
+        var icon: String {
+            switch self {
+            case .characters: return "person.fill"
+            case .scenes: return "person.2.fill"
+            }
+        }
+    }
     
     // MARK: - Computed Properties
     
@@ -64,6 +98,20 @@ struct CharactersView: View {
         let lowercasedSearch = searchText.lowercased()
         return characters.filter { character in
             character.name.lowercased().contains(lowercasedSearch)
+        }
+    }
+    
+    /// Filtered scenes based on search text
+    private var filteredScenes: [CharacterScene] {
+        if searchText.isEmpty {
+            return scenes
+        }
+        let lowercasedSearch = searchText.lowercased()
+        return scenes.filter { scene in
+            scene.name.lowercased().contains(lowercasedSearch) ||
+            scene.characterIds.compactMap { id in
+                characters.first { $0.id == id }?.name.lowercased()
+            }.contains { $0.contains(lowercasedSearch) }
         }
     }
     
@@ -87,11 +135,49 @@ struct CharactersView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
+                    // Custom themed tab bar
+                    HStack(spacing: 0) {
+                        ForEach(ListTab.allCases, id: \.self) { tab in
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedTab = tab
+                                }
+                            } label: {
+                                VStack(spacing: 6) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: tab.icon)
+                                            .font(.system(size: 14, weight: .medium))
+                                        Text(tab.rawValue)
+                                            .font(.subheadline.weight(.semibold))
+                                    }
+                                    .foregroundColor(selectedTab == tab ? theme.primary : theme.textSecondary)
+                                    
+                                    // Indicator bar
+                                    Rectangle()
+                                        .fill(selectedTab == tab ? theme.primary : Color.clear)
+                                        .frame(height: 2)
+                                        .clipShape(Capsule())
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .background(theme.background)
+                    
+                    // Divider
+                    Rectangle()
+                        .fill(theme.border.opacity(0.3))
+                        .frame(height: 1)
+                    
                     // Search bar
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(theme.textSecondary)
-                        TextField("Search characters...", text: $searchText)
+                        TextField("Search...", text: $searchText)
                             .font(.body)
                             .foregroundColor(theme.textPrimary)
                         
@@ -112,107 +198,19 @@ struct CharactersView: View {
                     .background(theme.background)
                     
                     List {
-                        Section(header: Text("Your Characters")
-                            .foregroundColor(theme.textSecondary)
-                            .fontDesign(theme.fontDesign)
-                        ) {
-                            if characters.isEmpty {
-                                VStack(spacing: 16) {
-                                    Text("No characters yet")
-                                        .font(.headline)
-                                        .foregroundColor(theme.textPrimary)
-                                        .fontDesign(theme.fontDesign)
-                                    
-                                    Text("Create your first character or generate a test character to get started.")
-                                        .font(.subheadline)
-                                        .foregroundColor(theme.textSecondary)
-                                        .fontDesign(theme.fontDesign)
-                                        .multilineTextAlignment(.center)
-                                    
-                                    HStack(spacing: 12) {
-                                        Button {
-                                            showingNewCharacterSheet = true
-                                        } label: {
-                                            HStack {
-                                                Image(systemName: "plus")
-                                                Text("New Character")
-                                            }
-                                            .font(.subheadline.weight(.medium))
-                                            .foregroundColor(theme.textOnPrimary)
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 10)
-                                            .background(theme.primary)
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                                            .contentShape(Rectangle())
-                                        }
-                                        .buttonStyle(.plain)
-                                        
-                                        Button {
-                                            generateTestCharacter()
-                                        } label: {
-                                            HStack {
-                                                Image(systemName: "dice")
-                                                Text("Generate")
-                                            }
-                                            .font(.subheadline.weight(.medium))
-                                            .foregroundColor(theme.primary)
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 10)
-                                            .background(theme.primary.opacity(0.15))
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                                            .contentShape(Rectangle())
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 20)
-                                .listRowBackground(theme.backgroundSecondary)
-                            } else if filteredCharacters.isEmpty {
-                                Text("No characters match \"\(searchText)\"")
-                                    .foregroundColor(theme.textSecondary)
-                                    .fontDesign(theme.fontDesign)
-                                    .listRowBackground(theme.backgroundSecondary)
-                            } else {
-                                ForEach(filteredCharacters) { character in
-                                    // Find the actual index in the original array for binding
-                                    if let index = characters.firstIndex(where: { $0.id == character.id }) {
-                                        // Use NavigationLink with EmptyView label to hide default chevron
-                                        // CharacterRowView provides the visible content with custom themed chevron
-                                        ZStack {
-                                            NavigationLink {
-                                                CharacterDetailView(
-                                                    character: $characters[index],
-                                                    openGenerator: openGenerator
-                                                )
-                                            } label: {
-                                                EmptyView()
-                                            }
-                                            .opacity(0)
-                                            
-                                            CharacterRowView(character: character)
-                                        }
-                                        .listRowBackground(Color.clear)
-                                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                                        .listRowSeparator(.hidden)
-                                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                            Button(role: .destructive) {
-                                                characterToDelete = character
-                                                showingDeleteConfirmation = true
-                                            } label: {
-                                                Label("Delete", systemImage: "trash")
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                        // Show content based on selected tab
+                        switch selectedTab {
+                        case .characters:
+                            charactersListContent(theme: theme)
+                        case .scenes:
+                            scenesListContent(theme: theme)
                         }
                     }
                     .scrollContentBackground(.hidden)
                     .listStyle(.insetGrouped)
                     
-                    // Generate Test Character button at bottom
-                    if !characters.isEmpty {
+                    // Generate button at bottom (context-aware based on selected tab)
+                    if selectedTab == .characters {
                         Button {
                             generateTestCharacter()
                         } label: {
@@ -229,10 +227,27 @@ struct CharactersView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.bottom, 16)
+                    } else if selectedTab == .scenes && characters.count >= 2 {
+                        Button {
+                            generateRandomScene()
+                        } label: {
+                            HStack {
+                                Image(systemName: "dice")
+                                Text("Generate A Random Scene")
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(theme.primary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(theme.primary.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
                     }
                 }
             }
-            .navigationTitle("Characters")
+            .navigationTitle("Library")
             .navigationBarTitleDisplayMode(.inline)
             .globalThemedNavigationBar()
             .toolbar {
@@ -256,9 +271,17 @@ struct CharactersView: View {
                 }
             }
             .sheet(isPresented: $showingNewCharacterSheet) {
-                NewCharacterView { newCharacter in
-                    characters.insert(newCharacter, at: 0)
-                }
+                CreateNewSheet(
+                    characters: characters,
+                    onCreateCharacter: { name in
+                        let newCharacter = CharacterProfile(name: name)
+                        characters.insert(newCharacter, at: 0)
+                    },
+                    onCreateScene: { name, characterIds in
+                        let newScene = CharacterScene(name: name, characterIds: characterIds)
+                        scenes.insert(newScene, at: 0)
+                    }
+                )
             }
             .alert("Delete Character?", isPresented: $showingDeleteConfirmation) {
                 Button("Delete", role: .destructive) {
@@ -278,16 +301,39 @@ struct CharactersView: View {
                     Text("Are you sure you want to delete this character?")
                 }
             }
+            .alert("Delete Scene?", isPresented: $showingSceneDeleteConfirmation) {
+                Button("Delete", role: .destructive) {
+                    if let scene = sceneToDelete,
+                       let index = scenes.firstIndex(where: { $0.id == scene.id }) {
+                        scenes.remove(at: index)
+                    }
+                    sceneToDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    sceneToDelete = nil
+                }
+            } message: {
+                if let scene = sceneToDelete {
+                    Text("Are you sure you want to delete \"\(scene.name)\"? This cannot be undone.")
+                } else {
+                    Text("Are you sure you want to delete this scene?")
+                }
+            }
             .background(
-                // Hidden NavigationLink for programmatic navigation from Home
+                // Hidden NavigationLinks for programmatic navigation
                 Group {
+                    // Character navigation from Home
                     if let id = navigateToCharacterId,
                        let index = characters.firstIndex(where: { $0.id == id }) {
                         NavigationLink(
                             destination: CharacterDetailView(
                                 character: $characters[index],
                                 openGenerator: openGenerator,
-                                initialPromptId: navigateToPromptId
+                                initialPromptId: navigateToPromptId,
+                                scenes: scenes,
+                                onSceneTap: { sceneId in
+                                    navigateToSceneId = sceneId
+                                }
                             )
                             // Force view recreation when character or prompt changes
                             .id("\(id.uuidString)-\(navigateToPromptId?.uuidString ?? "none")"),
@@ -303,8 +349,33 @@ struct CharactersView: View {
                         }
                         .hidden()
                     }
+                    
+                    // Scene navigation from "Scenes This Character is In" or Home gallery
+                    if let sceneId = navigateToSceneId,
+                       let index = scenes.firstIndex(where: { $0.id == sceneId }) {
+                        NavigationLink(
+                            destination: SceneDetailView(
+                                scene: $scenes[index],
+                                allCharacters: $characters,
+                                openGenerator: openGenerator,
+                                initialPromptId: navigateToScenePromptId
+                            )
+                            .id("\(sceneId.uuidString)-\(navigateToScenePromptId?.uuidString ?? "none")"),
+                            isActive: Binding(
+                                get: { navigateToSceneId != nil },
+                                set: { if !$0 { 
+                                    navigateToSceneId = nil
+                                    navigateToScenePromptId = nil
+                                } }
+                            )
+                        ) {
+                            EmptyView()
+                        }
+                        .hidden()
+                    }
                 }
             )
+            .toast(isPresented: $showNotEnoughCharactersToast, message: "Need at least 2 characters to create a random scene", style: .warning)
         }
     }
 
@@ -335,6 +406,226 @@ struct CharactersView: View {
         let testCharacter = CharacterProfile.generateTestCharacter(availableThemes: themeManager.availableThemes)
         characters.insert(testCharacter, at: 0)
         Logger.info("Generated test character: \(testCharacter.name)", category: .character)
+    }
+    
+    /// Generates a random scene with 2 or more random characters
+    private func generateRandomScene() {
+        // Need at least 2 characters to create a scene
+        guard characters.count >= 2 else {
+            showNotEnoughCharactersToast = true
+            return
+        }
+        
+        // Randomly select 2-4 characters (or all if fewer than 4)
+        let maxCharacters = min(4, characters.count)
+        let characterCount = Int.random(in: 2...maxCharacters)
+        let shuffledCharacters = characters.shuffled()
+        let selectedCharacters = Array(shuffledCharacters.prefix(characterCount))
+        let selectedIds = selectedCharacters.map { $0.id }
+        
+        // Generate a random scene name
+        let sceneNames = [
+            "Epic Encounter",
+            "Mysterious Meeting",
+            "The Great Adventure",
+            "Unexpected Alliance",
+            "Dramatic Confrontation",
+            "Secret Rendezvous",
+            "The Final Stand",
+            "Unlikely Heroes",
+            "Fateful Crossing",
+            "The Gathering"
+        ]
+        let sceneName = sceneNames.randomElement() ?? "Random Scene"
+        
+        // Create the scene
+        let newScene = CharacterScene(
+            name: sceneName,
+            description: "A randomly generated scene featuring \(selectedCharacters.map { $0.name }.joined(separator: ", ")).",
+            characterIds: selectedIds
+        )
+        scenes.insert(newScene, at: 0)
+        
+        Logger.info("Generated random scene: \(sceneName) with \(characterCount) characters", category: .data)
+    }
+    
+    // MARK: - List Content
+    
+    @ViewBuilder
+    private func charactersListContent(theme: ResolvedTheme) -> some View {
+        if characters.isEmpty {
+            Section {
+                VStack(spacing: 16) {
+                    Text("No characters yet")
+                        .font(.headline)
+                        .foregroundColor(theme.textPrimary)
+                        .fontDesign(theme.fontDesign)
+                    
+                    Text("Create your first character or generate a test character to get started.")
+                        .font(.subheadline)
+                        .foregroundColor(theme.textSecondary)
+                        .fontDesign(theme.fontDesign)
+                        .multilineTextAlignment(.center)
+                    
+                    HStack(spacing: 12) {
+                        Button {
+                            showingNewCharacterSheet = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "plus")
+                                Text("New Character")
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(theme.textOnPrimary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(theme.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button {
+                            generateTestCharacter()
+                        } label: {
+                            HStack {
+                                Image(systemName: "dice")
+                                Text("Generate")
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(theme.primary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(theme.primary.opacity(0.15))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .listRowBackground(theme.backgroundSecondary)
+            }
+        } else if filteredCharacters.isEmpty {
+            Section {
+                Text("No characters match \"\(searchText)\"")
+                    .foregroundColor(theme.textSecondary)
+                    .fontDesign(theme.fontDesign)
+                    .listRowBackground(theme.backgroundSecondary)
+            }
+        } else {
+            Section {
+                ForEach(filteredCharacters) { character in
+                    if let index = characters.firstIndex(where: { $0.id == character.id }) {
+                        ZStack {
+                            NavigationLink {
+                                CharacterDetailView(
+                                    character: $characters[index],
+                                    openGenerator: openGenerator,
+                                    scenes: scenes,
+                                    onSceneTap: { sceneId in
+                                        navigateToSceneId = sceneId
+                                    }
+                                )
+                            } label: {
+                                EmptyView()
+                            }
+                            .opacity(0)
+                            
+                            CharacterRowView(character: character)
+                        }
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                characterToDelete = character
+                                showingDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func scenesListContent(theme: ResolvedTheme) -> some View {
+        if scenes.isEmpty {
+            Section {
+                scenesEmptyState(theme: theme)
+            }
+        } else if filteredScenes.isEmpty {
+            Section {
+                Text("No scenes match \"\(searchText)\"")
+                    .foregroundColor(theme.textSecondary)
+                    .fontDesign(theme.fontDesign)
+                    .listRowBackground(theme.backgroundSecondary)
+            }
+        } else {
+            Section {
+                ForEach(filteredScenes) { scene in
+                    sceneRow(scene: scene, theme: theme)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Scenes Helpers
+    
+    @ViewBuilder
+    private func scenesEmptyState(theme: ResolvedTheme) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "person.3.fill")
+                .font(.title)
+                .foregroundColor(theme.textSecondary.opacity(0.5))
+            
+            Text("No scenes yet")
+                .font(.subheadline)
+                .foregroundColor(theme.textSecondary)
+            
+            Text("Create a scene to generate prompts with multiple characters.")
+                .font(.caption)
+                .foregroundColor(theme.textSecondary.opacity(0.8))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .listRowBackground(theme.backgroundSecondary)
+    }
+    
+    @ViewBuilder
+    private func sceneRow(scene: CharacterScene, theme: ResolvedTheme) -> some View {
+        if let index = scenes.firstIndex(where: { $0.id == scene.id }) {
+            ZStack {
+                NavigationLink {
+                    SceneDetailView(
+                        scene: $scenes[index],
+                        allCharacters: $characters,
+                        openGenerator: openGenerator
+                    )
+                } label: {
+                    EmptyView()
+                }
+                .opacity(0)
+                
+                SceneRowView(scene: scene, characters: characters)
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+            .listRowSeparator(.hidden)
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button(role: .destructive) {
+                    sceneToDelete = scene
+                    showingSceneDeleteConfirmation = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+        }
     }
 }
 

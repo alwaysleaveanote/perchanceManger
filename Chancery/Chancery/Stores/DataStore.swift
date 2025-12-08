@@ -44,6 +44,9 @@ final class DataStore: ObservableObject {
     /// All character profiles
     @Published var characters: [CharacterProfile] = []
     
+    /// All scenes (multi-character groups)
+    @Published var scenes: [CharacterScene] = []
+    
     /// All prompt presets
     @Published var presets: [PromptPreset] = []
     
@@ -96,6 +99,10 @@ final class DataStore: ObservableObject {
     
     private var scratchpadSavedFileURL: URL {
         documentsDirectory.appendingPathComponent("scratchpad_saved.json")
+    }
+    
+    private var scenesFileURL: URL {
+        documentsDirectory.appendingPathComponent("scenes.json")
     }
     
     // MARK: - Initialization
@@ -166,6 +173,13 @@ final class DataStore: ObservableObject {
             Logger.info("Loaded \(loaded.count) scratchpad bookmarks from local storage", category: .data)
         }
         
+        // Load scenes
+        if let data = try? Data(contentsOf: scenesFileURL),
+           let loaded = try? decoder.decode([CharacterScene].self, from: data) {
+            scenes = loaded
+            Logger.info("Loaded \(loaded.count) scenes from local storage", category: .data)
+        }
+        
         isLoaded = true
     }
     
@@ -195,6 +209,11 @@ final class DataStore: ObservableObject {
         // Save scratchpad saved prompts
         if let data = try? encoder.encode(scratchpadSaved) {
             try? data.write(to: scratchpadSavedFileURL)
+        }
+        
+        // Save scenes
+        if let data = try? encoder.encode(scenes) {
+            try? data.write(to: scenesFileURL)
         }
         
         // Save settings
@@ -262,6 +281,12 @@ final class DataStore: ObservableObject {
                 mergeScratchpadBookmarks(cloudBookmarks)
             }
             
+            // Fetch scenes
+            let cloudScenes = try await cloudKit.fetchAllScenes()
+            if !cloudScenes.isEmpty {
+                mergeScenes(cloudScenes)
+            }
+            
             // Save merged data locally
             saveLocalData()
             
@@ -324,6 +349,23 @@ final class DataStore: ObservableObject {
         presets = merged
     }
     
+    /// Merges cloud scenes with local, preferring cloud versions
+    private func mergeScenes(_ cloudScenes: [CharacterScene]) {
+        var merged = scenes
+        
+        for cloudScene in cloudScenes {
+            if let index = merged.firstIndex(where: { $0.id == cloudScene.id }) {
+                // Update existing
+                merged[index] = cloudScene
+            } else {
+                // Add new
+                merged.append(cloudScene)
+            }
+        }
+        
+        scenes = merged
+    }
+    
     // MARK: - Character Operations
     
     /// Adds a new character
@@ -370,6 +412,46 @@ final class DataStore: ObservableObject {
     /// Gets a binding-compatible index for a character
     func characterIndex(for id: UUID) -> Int? {
         characters.firstIndex { $0.id == id }
+    }
+    
+    // MARK: - Scene Operations
+    
+    /// Adds a new scene
+    func addScene(_ scene: CharacterScene) {
+        scenes.insert(scene, at: 0)
+        scheduleSave()
+        Logger.info("Added scene: \(scene.name)", category: .data)
+    }
+    
+    /// Updates an existing scene
+    func updateScene(_ scene: CharacterScene) {
+        guard let index = scenes.firstIndex(where: { $0.id == scene.id }) else {
+            Logger.warning("Scene not found for update: \(scene.id)", category: .data)
+            return
+        }
+        
+        scenes[index] = scene
+        scheduleSave()
+        Logger.debug("Updated scene: \(scene.name)", category: .data)
+    }
+    
+    /// Deletes a scene
+    func deleteScene(_ scene: CharacterScene) {
+        scenes.removeAll { $0.id == scene.id }
+        scheduleSave()
+        Logger.info("Deleted scene: \(scene.name)", category: .data)
+    }
+    
+    /// Gets a binding-compatible index for a scene
+    func sceneIndex(for id: UUID) -> Int? {
+        scenes.firstIndex { $0.id == id }
+    }
+    
+    /// Gets characters for a scene
+    func characters(for scene: CharacterScene) -> [CharacterProfile] {
+        scene.characterIds.compactMap { id in
+            characters.first { $0.id == id }
+        }
     }
     
     // MARK: - Preset Operations

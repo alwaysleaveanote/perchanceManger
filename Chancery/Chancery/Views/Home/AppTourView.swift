@@ -75,6 +75,17 @@ struct AppTourView: View {
             ]
         ),
         TourStep(
+            title: "Scenes",
+            description: "Create scenes with multiple characters! Scenes let you generate images featuring two or more characters together with shared settings.",
+            icon: "person.3.fill",
+            features: [
+                TourFeature(icon: "person.2.fill", title: "Multiple Characters", description: "Combine any of your characters in a single scene"),
+                TourFeature(icon: "sparkles.rectangle.stack", title: "Scene Prompts", description: "Create prompts with per-character and shared settings"),
+                TourFeature(icon: "paintpalette", title: "Scene Themes", description: "Each scene can have its own visual theme"),
+                TourFeature(icon: "photo.stack", title: "Scene Gallery", description: "Store images generated from scene prompts")
+            ]
+        ),
+        TourStep(
             title: "Image Gallery",
             description: "Browse all your generated images in one place. View them full-screen, set profile pictures, or navigate to the prompt that created them.",
             icon: "photo.on.rectangle.angled",
@@ -98,13 +109,13 @@ struct AppTourView: View {
         ),
         TourStep(
             title: "You're All Set!",
-            description: "You now know the basics of Chancery. Start by creating a character or experimenting in the Scratchpad. Have fun!",
+            description: "You now know the basics of Chancery. Start by creating a character, building a scene, or experimenting in the Scratchpad. Have fun!",
             icon: "checkmark.circle.fill",
             features: [
                 TourFeature(icon: "sparkles", title: "Start Generating", description: "Head to the Scratchpad to create your first prompt"),
                 TourFeature(icon: "person.badge.plus", title: "Create a Character", description: "Set up a profile for your first character"),
-                TourFeature(icon: "questionmark.circle", title: "Need Help?", description: "You can always revisit this tour from the home screen"),
-                TourFeature(icon: "heart.fill", title: "Enjoy!", description: "We hope Chancery helps you create amazing images")
+                TourFeature(icon: "person.3.fill", title: "Create a Scene", description: "Combine characters for group images"),
+                TourFeature(icon: "questionmark.circle", title: "Need Help?", description: "You can always revisit this tour from the home screen")
             ]
         )
     ]

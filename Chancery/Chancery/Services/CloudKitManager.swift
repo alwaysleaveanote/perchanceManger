@@ -15,6 +15,7 @@ import Combine
 /// Record type identifiers for CloudKit
 enum CloudKitRecordType: String {
     case character = "Character"
+    case scene = "Scene"
     case savedPrompt = "SavedPrompt"
     case promptImage = "PromptImage"
     case promptPreset = "PromptPreset"
@@ -289,6 +290,79 @@ final class CloudKitManager: ObservableObject {
         do {
             try await privateDatabase.deleteRecord(withID: recordID)
             Logger.info("Deleted character: \(character.name)", category: .data)
+        } catch let error as CKError {
+            throw mapCKError(error)
+        }
+    }
+    
+    // MARK: - Scene Operations
+    
+    /// Saves a scene to CloudKit
+    func saveScene(_ scene: CharacterScene) async throws {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
+            throw CloudKitError.notAuthenticated
+        }
+        
+        syncStatus = .syncing
+        defer { syncStatus = .idle }
+        
+        let record = scene.toCKRecord(zoneID: zoneID)
+        
+        do {
+            _ = try await privateDatabase.save(record)
+            Logger.info("Saved scene: \(scene.name)", category: .data)
+        } catch let error as CKError {
+            throw mapCKError(error)
+        }
+    }
+    
+    /// Fetches all scenes from CloudKit
+    func fetchAllScenes() async throws -> [CharacterScene] {
+        guard isAvailable, let zoneID = zoneID, let privateDatabase = privateDatabase else {
+            throw CloudKitError.notAuthenticated
+        }
+        
+        syncStatus = .syncing
+        defer { syncStatus = .idle }
+        
+        let query = CKQuery(recordType: CloudKitRecordType.scene.rawValue, predicate: NSPredicate(value: true))
+        query.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+        
+        do {
+            let (results, _) = try await privateDatabase.records(matching: query, inZoneWith: zoneID)
+            
+            var scenes: [CharacterScene] = []
+            for (_, result) in results {
+                switch result {
+                case .success(let record):
+                    if let scene = CharacterScene(from: record) {
+                        scenes.append(scene)
+                    }
+                case .failure(let error):
+                    Logger.warning("Failed to fetch scene record: \(error)", category: .data)
+                }
+            }
+            
+            Logger.info("Fetched \(scenes.count) scenes", category: .data)
+            return scenes
+            
+        } catch let error as CKError {
+            throw mapCKError(error)
+        }
+    }
+    
+    /// Deletes a scene from CloudKit
+    func deleteScene(_ scene: CharacterScene) async throws {
+        guard isAvailable, let privateDatabase = privateDatabase, let recordID = recordID(for: scene.id, type: .scene) else {
+            throw CloudKitError.notAuthenticated
+        }
+        
+        syncStatus = .syncing
+        defer { syncStatus = .idle }
+        
+        do {
+            try await privateDatabase.deleteRecord(withID: recordID)
+            Logger.info("Deleted scene: \(scene.name)", category: .data)
         } catch let error as CKError {
             throw mapCKError(error)
         }

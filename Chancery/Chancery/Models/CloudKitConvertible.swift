@@ -120,6 +120,147 @@ extension CharacterProfile {
     }
 }
 
+// MARK: - CharacterScene + CloudKit
+
+extension CharacterScene {
+    
+    /// Converts this scene to a CKRecord
+    func toCKRecord(zoneID: CKRecordZone.ID) -> CKRecord {
+        let recordID = CKRecord.ID(
+            recordName: "\(CloudKitRecordType.scene.rawValue)_\(id.uuidString)",
+            zoneID: zoneID
+        )
+        let record = CKRecord(recordType: CloudKitRecordType.scene.rawValue, recordID: recordID)
+        
+        // Basic fields
+        record["uuid"] = id.uuidString
+        record["name"] = name
+        record["sceneDescription"] = description
+        record["notes"] = notes
+        
+        // Customization
+        record["sceneDefaultPerchanceGenerator"] = sceneDefaultPerchanceGenerator
+        record["sceneThemeId"] = sceneThemeId
+        
+        let encoder = JSONEncoder()
+        
+        // Encode character IDs as JSON array
+        if let characterIdsData = try? encoder.encode(characterIds),
+           let characterIdsString = String(data: characterIdsData, encoding: .utf8) {
+            record["characterIds"] = characterIdsString
+        }
+        
+        // Encode scene defaults as JSON
+        if let defaultsData = try? encoder.encode(sceneDefaults),
+           let defaultsString = String(data: defaultsData, encoding: .utf8) {
+            record["sceneDefaults"] = defaultsString
+        }
+        
+        // Encode prompts as JSON
+        if let promptsData = try? encoder.encode(prompts),
+           let promptsString = String(data: promptsData, encoding: .utf8) {
+            record["prompts"] = promptsString
+        }
+        
+        // Encode links as JSON
+        if let linksData = try? encoder.encode(links),
+           let linksString = String(data: linksData, encoding: .utf8) {
+            record["links"] = linksString
+        }
+        
+        // Encode standalone images as JSON
+        if let standaloneData = try? encoder.encode(standaloneImages),
+           let standaloneString = String(data: standaloneData, encoding: .utf8) {
+            record["standaloneImages"] = standaloneString
+        }
+        
+        // Profile image as asset
+        if let imageData = profileImageData {
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension("jpg")
+            
+            do {
+                try imageData.write(to: tempURL)
+                record["profileImage"] = CKAsset(fileURL: tempURL)
+            } catch {
+                Logger.warning("Failed to write scene profile image for CloudKit: \(error)", category: .data)
+            }
+        }
+        
+        return record
+    }
+    
+    /// Creates a CharacterScene from a CKRecord
+    init?(from record: CKRecord) {
+        guard record.recordType == CloudKitRecordType.scene.rawValue,
+              let uuidString = record["uuid"] as? String,
+              let uuid = UUID(uuidString: uuidString),
+              let name = record["name"] as? String else {
+            return nil
+        }
+        
+        let decoder = JSONDecoder()
+        
+        // Decode character IDs
+        var characterIds: [UUID] = []
+        if let characterIdsString = record["characterIds"] as? String,
+           let characterIdsData = characterIdsString.data(using: .utf8) {
+            characterIds = (try? decoder.decode([UUID].self, from: characterIdsData)) ?? []
+        }
+        
+        // Decode scene defaults
+        var sceneDefaults: [GlobalDefaultKey: String] = [:]
+        if let defaultsString = record["sceneDefaults"] as? String,
+           let defaultsData = defaultsString.data(using: .utf8) {
+            sceneDefaults = (try? decoder.decode([GlobalDefaultKey: String].self, from: defaultsData)) ?? [:]
+        }
+        
+        // Decode prompts
+        var prompts: [ScenePrompt] = []
+        if let promptsString = record["prompts"] as? String,
+           let promptsData = promptsString.data(using: .utf8) {
+            prompts = (try? decoder.decode([ScenePrompt].self, from: promptsData)) ?? []
+        }
+        
+        // Decode links
+        var links: [RelatedLink] = []
+        if let linksString = record["links"] as? String,
+           let linksData = linksString.data(using: .utf8) {
+            links = (try? decoder.decode([RelatedLink].self, from: linksData)) ?? []
+        }
+        
+        // Decode standalone images
+        var standaloneImages: [PromptImage] = []
+        if let standaloneString = record["standaloneImages"] as? String,
+           let standaloneData = standaloneString.data(using: .utf8) {
+            standaloneImages = (try? decoder.decode([PromptImage].self, from: standaloneData)) ?? []
+        }
+        
+        // Load profile image from asset
+        var profileImageData: Data? = nil
+        if let asset = record["profileImage"] as? CKAsset,
+           let fileURL = asset.fileURL {
+            profileImageData = try? Data(contentsOf: fileURL)
+        }
+        
+        self.init(
+            id: uuid,
+            name: name,
+            description: record["sceneDescription"] as? String ?? "",
+            notes: record["notes"] as? String ?? "",
+            characterIds: characterIds,
+            prompts: prompts,
+            profileImageData: profileImageData,
+            standaloneImages: standaloneImages,
+            links: links,
+            sceneThemeId: record["sceneThemeId"] as? String,
+            sceneDefaultPerchanceGenerator: record["sceneDefaultPerchanceGenerator"] as? String,
+            sceneDefaults: sceneDefaults
+        )
+    }
+}
+
 // MARK: - PromptPreset + CloudKit
 
 extension PromptPreset {
