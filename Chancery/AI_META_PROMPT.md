@@ -897,6 +897,71 @@ Fixed preset name not updating after save due to timing issue, redesigned scene 
    - Shadow effect on selected tab
    - Clearly distinct from settings cards below
 
+### 4.16 [2025-12-07] – Comprehensive Test Coverage Review
+
+**Summary**  
+Reviewed all existing tests and created comprehensive new tests for gallery functionality, preset functionality, and scene features. Total test count: 318 tests, all passing.
+
+**Files / Modules Touched**  
+- `ChanceryTests/GalleryAndPresetTests.swift` - NEW: 25 comprehensive tests for gallery and preset functionality
+
+**New Tests Added (GalleryAndPresetTests.swift)**
+1. **Gallery Image Order Tests**
+   - `test_characterGallery_imageOrder_profileFirstThenPromptsThenStandalone`
+   - `test_sceneGallery_imageOrder_profileFirstThenPromptsThenStandalone`
+   - `test_galleryImage_profileImageDeduplication_whenProfileMatchesPromptImage`
+
+2. **Your Creations Gallery Tests**
+   - `test_yourCreationsGallery_includesCharacterImages`
+   - `test_yourCreationsGallery_includesSceneImages`
+   - `test_yourCreationsGallery_deduplicatesAcrossCharactersAndScenes`
+   - `test_yourCreationsGallery_includesStandaloneImages`
+   - `test_yourCreationsGallery_includesProfileImages`
+
+3. **Scene Prompt Navigation Tests**
+   - `test_scenePromptImage_hasCorrectPromptId`
+   - `test_scenePromptImage_promptIdIsNotNewUUID`
+
+4. **Scene Defaults Tests**
+   - `test_sceneDefaults_sceneDefaultsTakePriorityOverGlobal`
+   - `test_sceneDefaults_emptySceneDefaultFallsBackToGlobal`
+   - `test_sceneDefaults_canStoreAndRetrieve`
+   - `test_sceneDefaults_encodeDecode`
+
+5. **Scene Prompt Preset Tests**
+   - `test_scenePrompt_hasPresetNameFields`
+   - `test_sceneCharacterSettings_hasPresetNameFields`
+   - `test_presetMatching_findsMatchingPreset`
+   - `test_presetMatching_ignoresWhitespace`
+   - `test_presetMatching_doesNotMatchDifferentText`
+   - `test_scenePrompt_encodeDecode_preservesPresetNames`
+   - `test_sceneCharacterSettings_encodeDecode_preservesPresetNames`
+
+6. **Scene Character Order Tests**
+   - `test_sceneCharacterOrder_preservesInsertionOrder`
+   - `test_sceneCharacterOrder_matchesCharacterListOrder`
+
+**Test Files Summary (19 total):**
+1. `AppThemeTests.swift` - Theme model tests
+2. `BugRegressionTests.swift` - Bug regression tests (18 bugs)
+3. `ChanceryTests.swift` - Basic app tests
+4. `CharacterProfileTests.swift` - Character model tests
+5. `DataStoreTests.swift` - Data persistence tests
+6. `GalleryAndPresetTests.swift` - NEW: Gallery and preset tests
+7. `PromptComposerTests.swift` - Character prompt composition
+8. `PromptEnumsTests.swift` - Prompt enum tests
+9. `PromptImageTests.swift` - Image model tests
+10. `PromptPresetStoreTests.swift` - Preset store tests
+11. `PromptPresetTests.swift` - Preset model tests
+12. `RelatedLinkTests.swift` - Link model tests
+13. `SavedPromptTests.swift` - Saved prompt tests
+14. `SceneGalleryTests.swift` - Scene gallery tests
+15. `ScenePromptComposerTests.swift` - Scene prompt composition
+16. `SceneTests.swift` - Scene model tests
+17. `StandaloneImagesTests.swift` - Standalone image tests
+18. `StringExtensionsTests.swift` - String extension tests
+19. `ThemeManagerTests.swift` - Theme manager tests
+
 5. OPEN QUESTIONS & TODOs FOR ARCHITECTURE (LIVING SECTION – EDITABLE)
 
 For unresolved architectural decisions by either AI or humans.
