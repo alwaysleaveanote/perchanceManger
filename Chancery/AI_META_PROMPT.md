@@ -1097,3 +1097,264 @@ This section captures learned insights about the user's preferences, working sty
    private var prompt: PromptType { promptBinding.wrappedValue }
    ```
    Then use `promptBinding.wrappedValue` for modifications and `prompt` for reads.
+
+---
+
+# 7. CODEBASE REVIEW – AI META PROMPT
+
+**Review Date:** 2025-12-07  
+**Reviewer:** AI Senior Software Engineer  
+**Scope:** Full project scan including all Swift source files, tests, models, views, services, and configuration.
+
+## 7.1 High-Level Summary
+
+### Overall Assessment
+The Chancery codebase is **well-structured and maintainable** with good separation of concerns, comprehensive documentation, and solid test coverage (318 tests). The architecture follows SwiftUI best practices with proper use of `@MainActor`, `ObservableObject`, and environment objects.
+
+### Major Strengths
+1. **Excellent Documentation**: All models, stores, and services have comprehensive doc comments with usage examples
+2. **Consistent Patterns**: Unified approach to theming, data binding, and navigation across views
+3. **Good Test Coverage**: 19 test files with 318 tests covering models, stores, and integration scenarios
+4. **Proper Logging**: Centralized `Logger` utility with levels, categories, and conditional compilation
+5. **Feature Flags**: Clean feature flag system for CloudKit toggle
+6. **Reusable Components**: Well-designed component library (ThemedComponents, CollapsibleSection, etc.)
+7. **CloudKit Integration**: Proper sync architecture with conflict handling and offline support
+
+### Major Weaknesses and Risk Areas
+1. **Large View Files**: Several views exceed 800+ lines (ScenePromptEditorView: 1221, PromptEditorView: 969)
+2. **Code Duplication**: Significant duplication between character and scene prompt editors
+3. **Debug Print Statements**: 22 `print()` statements left in production code
+4. **CloudKit Disabled**: Feature flag `isCloudKitEnabled = false` means sync is not active
+5. **Image Memory**: Raw image data stored in memory without lazy loading or caching
+
+## 7.2 Key Findings by Category
+
+### 7.2.1 Bugs & Bug-Prone Areas
+
+- **[File: `Views/Scene/SceneDetailView.swift`, Line ~49]**
+  - **Issue:** Profile image creates new UUID each time `allImages` is computed
+  - **Why it's a problem:** Can cause SwiftUI identity issues and gallery navigation bugs
+  - **Suggested fix:** Use deterministic UUID based on scene ID hash (already documented in learned mistakes)
+
+- **[File: `Views/Home/HomeView.swift`, Line ~77]**
+  - **Issue:** Standalone images use `promptId: UUID()` placeholder
+  - **Why it's a problem:** Navigation to "view prompt" will fail for standalone images
+  - **Suggested fix:** Add `isStandaloneImage` flag handling in navigation logic
+
+- **[File: `Stores/DataStore.swift`, Lines 200-217]**
+  - **Issue:** Silent failure on file write with `try?`
+  - **Why it's a problem:** Data loss could go unnoticed if disk is full or permissions fail
+  - **Suggested fix:** Log errors and potentially surface to user for critical data
+
+### 7.2.2 Security Concerns
+
+- **[File: `Components/WebView.swift`, Lines 49-54]**
+  - **Issue:** JavaScript injection with string escaping
+  - **Risk:** Potential XSS if prompt text contains malicious content
+  - **Suggested fix:** Use `WKUserScript` or proper JSON encoding instead of string interpolation
+
+- **[File: `Models/CloudKitConvertible.swift`, Lines 53-64]**
+  - **Issue:** Temporary files created for CloudKit assets not cleaned up
+  - **Risk:** Disk space leak over time
+  - **Suggested fix:** Add cleanup in `defer` block or use `FileManager.removeItem`
+
+### 7.2.3 Code Smells / Maintainability
+
+- **[File: `Views/Scene/ScenePromptEditorView.swift` - 1221 lines]**
+  - **Smell:** God object - single view handling tabs, presets, images, alerts, toasts
+  - **Impact:** Difficult to test, modify, or understand
+  - **Refactor idea:** Extract into smaller views: `ScenePromptTabSelector`, `ScenePromptSettingsSection`, `ScenePromptActionsBar`
+
+- **[File: `Views/Character/PromptEditorView.swift` - 969 lines]**
+  - **Smell:** Same issue as ScenePromptEditorView
+  - **Impact:** Parallel maintenance burden
+  - **Refactor idea:** Create shared `PromptEditorCore` component used by both
+
+- **[File: `Components/ThemedComponents.swift` - 832 lines]**
+  - **Smell:** Multiple unrelated components in single file
+  - **Impact:** Hard to navigate and maintain
+  - **Refactor idea:** Split into separate files: `ThemedButton.swift`, `ThemedCard.swift`, `ThemedNavigationBar.swift`
+
+- **[Files: Multiple views]**
+  - **Smell:** 22 `print()` statements in production code
+  - **Impact:** Console noise, potential performance impact, unprofessional
+  - **Refactor idea:** Replace all `print()` with `Logger.debug()` calls
+
+### 7.2.4 Duplicated / Near-Duplicated Code
+
+- **[Files: `PromptEditorView.swift`, `ScenePromptEditorView.swift`]**
+  - **Duplication:** ~60% similar code for preset handling, section rows, quick actions
+  - **Refactor idea:** Create `PromptSectionEditor` reusable component with preset support
+
+- **[Files: `CharacterDetailView.swift`, `SceneDetailView.swift`]**
+  - **Duplication:** Nearly identical toolbar, gallery sheet, and navigation patterns
+  - **Refactor idea:** Create `DetailViewContainer` protocol/component
+
+- **[Files: `CharacterOverviewView.swift`, `SceneOverviewView.swift`]**
+  - **Duplication:** Similar profile card, links section, gallery thumbnail patterns
+  - **Refactor idea:** Already using `ProfileCard`, `LinksCard` - continue extracting shared components
+
+- **[Files: `MultiCharacterPickerSheet.swift`, `MultiScenePickerSheet.swift`]**
+  - **Duplication:** Nearly identical structure with different data types
+  - **Refactor idea:** Create generic `MultiItemPickerSheet<T>` component
+
+### 7.2.5 Design & Architecture Issues
+
+- **[Area: Image Storage]**
+  - **Issue:** Images stored as raw `Data` in memory, encoded in JSON
+  - **Impact:** Memory pressure with many images, slow JSON encoding/decoding
+  - **Suggested direction:** Move to file-based storage with lazy loading, store only file references in models
+
+- **[Area: CloudKit Sync]**
+  - **Issue:** Simple "cloud wins" merge strategy may lose local changes
+  - **Impact:** Data loss if user makes changes offline then syncs
+  - **Suggested direction:** Implement timestamp-based merge or conflict resolution UI
+
+- **[Area: View-Model Coupling]**
+  - **Issue:** Views directly access `DataStore.shared` singleton in some places
+  - **Impact:** Harder to test, tight coupling
+  - **Suggested direction:** Consistently use environment objects, avoid singleton access in views
+
+### 7.2.6 Testing Gaps & Issues
+
+- **[Module: CloudKitManager]**
+  - **Gap:** No unit tests for CloudKit operations
+  - **Risk:** Sync bugs could go undetected
+  - **Test suggestions:** Mock CKContainer, test record conversion, error handling
+
+- **[Module: WebView]**
+  - **Gap:** No tests for JavaScript injection
+  - **Risk:** Prompt injection could break silently
+  - **Test suggestions:** Unit test escaping logic, integration test with mock WebView
+
+- **[Module: ThemeManager]**
+  - **Gap:** Limited tests for theme resolution with character/scene overrides
+  - **Risk:** Theme bugs in edge cases
+  - **Test suggestions:** Test fallback chains, nil handling, theme switching
+
+- **[Module: Views]**
+  - **Gap:** No UI tests or snapshot tests
+  - **Risk:** Visual regressions undetected
+  - **Test suggestions:** Add XCUITests for critical flows, consider snapshot testing
+
+### 7.2.7 Logging & Observability
+
+- **[File: `Components/ThemedComponents.swift`]**
+  - **Issue:** 8 `print()` statements for debugging navigation bar
+  - **Suggestion:** Replace with `Logger.debug()` with `.ui` category
+
+- **[File: `Views/Settings/CharacterSettingsView.swift`]**
+  - **Issue:** 8 `print()` statements for debugging
+  - **Suggestion:** Replace with `Logger.debug()` with `.character` category
+
+- **[Area: Error Handling]**
+  - **Issue:** Many `try?` silent failures without logging
+  - **Suggestion:** Add `Logger.warning()` for all silent failures
+
+- **[Area: CloudKit]**
+  - **Issue:** Good error logging but no user-facing error messages
+  - **Suggestion:** Surface sync errors to user with actionable messages
+
+### 7.2.8 Performance & Efficiency
+
+- **[File: `Views/Home/HomeView.swift`, `allGalleryImages` computed property]**
+  - **Concern:** O(n*m) complexity iterating all characters and scenes on every access
+  - **Idea:** Cache result in `@State`, invalidate on data change
+
+- **[File: `Models/PromptImage.swift`]**
+  - **Concern:** Full image data stored in memory, no lazy loading
+  - **Idea:** Store file URLs, load on demand, implement LRU cache
+
+- **[File: `Stores/DataStore.swift`, `saveLocalData()`]**
+  - **Concern:** Encodes entire data set on every save
+  - **Idea:** Implement incremental saves for changed items only
+
+- **[File: `Models/CloudKitConvertible.swift`]**
+  - **Concern:** Prompts and images encoded as JSON strings in CloudKit records
+  - **Idea:** Consider separate records for large data, use CKAsset for images
+
+### 7.2.9 Configuration / Environment Issues
+
+- **[File: `Utilities/FeatureFlags.swift`]**
+  - **Issue:** `isCloudKitEnabled = false` hardcoded
+  - **Risk:** Easy to forget to enable for release
+  - **Suggestion:** Use build configuration or environment variable
+
+- **[File: `Utilities/Logger.swift`]**
+  - **Issue:** `minimumLevel` based on `#if DEBUG` only
+  - **Risk:** No way to enable debug logging in TestFlight builds
+  - **Suggestion:** Add UserDefaults toggle for debug logging
+
+- **[File: `Data/PerchanceGenerators.swift`]**
+  - **Issue:** Hardcoded list of generators
+  - **Risk:** Outdated if Perchance adds/removes generators
+  - **Suggestion:** Consider fetching from API or making user-configurable
+
+## 7.3 Prioritized Action Plan
+
+### P0 – Must Fix Soon (High Risk / High Impact)
+
+1. **Replace all `print()` with `Logger.debug()`** - 22 occurrences across 7 files
+2. **Add error logging for silent `try?` failures** in DataStore.swift
+3. **Clean up temporary CloudKit asset files** in CloudKitConvertible.swift
+4. **Fix JavaScript injection security** in WebView.swift - use proper encoding
+
+### P1 – Important But Not Urgent
+
+1. **Extract shared PromptEditorCore component** to reduce duplication between character/scene editors
+2. **Split ThemedComponents.swift** into separate files (800+ lines)
+3. **Add CloudKitManager unit tests** with mocked CKContainer
+4. **Implement image lazy loading** to reduce memory pressure
+5. **Add timestamp-based merge** for CloudKit sync conflicts
+
+### P2 – Nice to Have / Cleanup / Polish
+
+1. **Create generic MultiItemPickerSheet<T>** to replace duplicate picker sheets
+2. **Add UI tests** for critical user flows
+3. **Make FeatureFlags configurable** via build settings
+4. **Add user-facing sync error messages**
+5. **Implement incremental saves** in DataStore
+
+## 7.4 Notes for Future Refactors & Improvements
+
+### Architectural Improvements
+
+1. **Image Storage Refactor**: Move from in-memory Data to file-based storage with lazy loading. This would:
+   - Reduce memory footprint significantly
+   - Speed up JSON encoding/decoding
+   - Enable image caching and thumbnails
+   - Allow for image compression options
+
+2. **View Decomposition**: The largest views (1000+ lines) should be broken into:
+   - Container views (navigation, state management)
+   - Section views (individual UI sections)
+   - Action views (buttons, toolbars)
+   - This enables better testing and reuse
+
+3. **Protocol-Based Components**: Create protocols for common patterns:
+   - `DetailViewProtocol` for character/scene detail views
+   - `PromptEditorProtocol` for prompt editing
+   - `GalleryDisplayable` for items with images
+
+### Conventions to Establish
+
+1. **Logging Standard**: All debug output via `Logger`, never `print()`
+2. **Error Handling Standard**: Log all errors, even when using `try?`
+3. **View Size Limit**: No view file should exceed 500 lines
+4. **Test Coverage Requirement**: All new features require tests before merge
+5. **Component Extraction Threshold**: If code is duplicated 3+ times, extract to component
+
+### Technical Debt Tracking
+
+| Item | Priority | Estimated Effort | Files Affected |
+|------|----------|------------------|----------------|
+| Remove print statements | P0 | 1 hour | 7 files |
+| Split ThemedComponents | P1 | 2 hours | 1 file → 5 files |
+| Extract PromptEditorCore | P1 | 4 hours | 2 files |
+| Image lazy loading | P1 | 8 hours | 5+ files |
+| CloudKit tests | P1 | 4 hours | 1 new file |
+| Generic picker sheet | P2 | 2 hours | 2 files |
+
+---
+
+*This review was conducted by scanning all 45 Swift source files, 19 test files, and configuration files. The analysis focused on code quality, security, performance, and maintainability.*
